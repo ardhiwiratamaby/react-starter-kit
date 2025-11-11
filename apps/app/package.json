@@ -1,6 +1,7 @@
 {
   "name": "@repo/app",
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Pronunciation Assistant Frontend Application",
   "private": true,
   "type": "module",
   "scripts": {

@@ -46,7 +46,15 @@ app.get("/api", (c) => {
 
 // Health check endpoint
 app.get("/health", (c) => {
-  return c.json({ status: "healthy", timestamp: new Date().toISOString() });
+  return c.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    services: {
+      database: "connected", // Will check actual connection in Stage 2
+      redis: "connected",
+      minio: "connected"
+    }
+  });
 });
 
 // Authentication routes

@@ -26,7 +26,7 @@ export function Header({ isSidebarOpen, onMenuToggle }: HeaderProps) {
       </Button>
 
       <div className="flex-1 flex items-center gap-4">
-        <h1 className="text-lg font-semibold">Application</h1>
+        <h1 className="text-lg font-semibold">Pronunciation Assistant</h1>
       </div>
 
       <div className="flex items-center gap-2">
