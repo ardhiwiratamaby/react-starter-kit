@@ -81,3 +81,9 @@ docs/.vitepress/dist
 # https://github.com/github/gitignore/blob/master/Global/macOS.gitignore
 .DS_Store
 
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+

@@ -9,7 +9,10 @@
     "bun": ">=1.2.0"
   },
   "workspaces": [
-    "apps/*",
+    "apps/web",
+    "apps/api",
+    "apps/app",
+    "apps/email",
     "db",
     "packages/*",
     "scripts"
