@@ -18,6 +18,7 @@ This stage implements the interactive conversation practice system that allows u
 ## Technical Requirements
 
 ### Core Practice Features
+
 - Turn-based conversation flow
 - Role selection (Person A/Person B)
 - Script highlighting and current turn indication
@@ -26,6 +27,7 @@ This stage implements the interactive conversation practice system that allows u
 - Text input alternative to voice recording
 
 ### User Experience
+
 - Intuitive interface with clear turn indicators
 - Visual feedback for speaking and listening
 - Conversation context and hints
@@ -34,6 +36,7 @@ This stage implements the interactive conversation practice system that allows u
 - Real-time status updates
 
 ### Session Management
+
 - Conversation session creation and tracking
 - Turn completion monitoring
 - Session persistence and recovery
@@ -45,6 +48,7 @@ This stage implements the interactive conversation practice system that allows u
 ### Step 1: Conversation Practice tRPC Router
 
 #### 1.1 Session Management API
+
 ```typescript
 // apps/api/src/router/conversations.ts
 import { router, protectedProcedure } from "./trpc";
@@ -55,17 +59,19 @@ import { ConversationService } from "../services/conversation-service";
 export const conversationsRouter = router({
   // Start new conversation session
   startSession: protectedProcedure
-    .input(z.object({
-      scriptId: z.string().uuid(),
-      userRole: z.enum(["PERSON_A", "PERSON_B"]),
-    }))
+    .input(
+      z.object({
+        scriptId: z.string().uuid(),
+        userRole: z.enum(["PERSON_A", "PERSON_B"]),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       try {
         const conversationService = new ConversationService();
         const session = await conversationService.startConversationSession(
           ctx.user.id,
           input.scriptId,
-          input.userRole
+          input.userRole,
         );
 
         return { session };
@@ -85,7 +91,7 @@ export const conversationsRouter = router({
       const conversationService = new ConversationService();
       const session = await conversationService.getConversationSession(
         input.sessionId,
-        ctx.user.id
+        ctx.user.id,
       );
 
       if (!session) {
@@ -105,7 +111,7 @@ export const conversationsRouter = router({
       const conversationService = new ConversationService();
       const turn = await conversationService.getCurrentTurn(
         input.sessionId,
-        ctx.user.id
+        ctx.user.id,
       );
 
       if (!turn) {
@@ -120,25 +126,29 @@ export const conversationsRouter = router({
 
   // Submit user turn (text or audio)
   submitTurn: protectedProcedure
-    .input(z.object({
-      sessionId: z.string().uuid(),
-      turnData: z.object({
-        type: z.enum(["TEXT", "AUDIO"]),
-        content: z.string(), // Text content or audio file URL
-        audioMetadata: z.object({
-          duration: z.number(),
-          format: z.string(),
-          size: z.number(),
-        }).optional(),
+    .input(
+      z.object({
+        sessionId: z.string().uuid(),
+        turnData: z.object({
+          type: z.enum(["TEXT", "AUDIO"]),
+          content: z.string(), // Text content or audio file URL
+          audioMetadata: z
+            .object({
+              duration: z.number(),
+              format: z.string(),
+              size: z.number(),
+            })
+            .optional(),
+        }),
       }),
-    }))
+    )
     .mutation(async ({ input, ctx }) => {
       try {
         const conversationService = new ConversationService();
         const result = await conversationService.submitUserTurn(
           ctx.user.id,
           input.sessionId,
-          input.turnData
+          input.turnData,
         );
 
         return result;
@@ -153,17 +163,19 @@ export const conversationsRouter = router({
 
   // Get AI response for current turn
   getAIResponse: protectedProcedure
-    .input(z.object({
-      sessionId: z.string().uuid(),
-      userTurnId: z.string().uuid(),
-    }))
+    .input(
+      z.object({
+        sessionId: z.string().uuid(),
+        userTurnId: z.string().uuid(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       try {
         const conversationService = new ConversationService();
         const response = await conversationService.getAIResponse(
           ctx.user.id,
           input.sessionId,
-          input.userTurnId
+          input.userTurnId,
         );
 
         return response;
@@ -178,11 +190,13 @@ export const conversationsRouter = router({
 
   // Complete conversation session
   completeSession: protectedProcedure
-    .input(z.object({
-      sessionId: z.string().uuid(),
-      feedback: z.string().optional(),
-      rating: z.number().min(1).max(5).optional(),
-    }))
+    .input(
+      z.object({
+        sessionId: z.string().uuid(),
+        feedback: z.string().optional(),
+        rating: z.number().min(1).max(5).optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       try {
         const conversationService = new ConversationService();
@@ -190,7 +204,7 @@ export const conversationsRouter = router({
           ctx.user.id,
           input.sessionId,
           input.feedback,
-          input.rating
+          input.rating,
         );
 
         return result;
@@ -205,15 +219,20 @@ export const conversationsRouter = router({
 
   // Get conversation history
   getHistory: protectedProcedure
-    .input(z.object({
-      page: z.number().min(1).default(1),
-      limit: z.number().min(1).max(20).default(10),
-      scriptId: z.string().uuid().optional(),
-      status: z.enum(["ACTIVE", "COMPLETED", "PAUSED"]).optional(),
-    }))
+    .input(
+      z.object({
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).max(20).default(10),
+        scriptId: z.string().uuid().optional(),
+        status: z.enum(["ACTIVE", "COMPLETED", "PAUSED"]).optional(),
+      }),
+    )
     .query(async ({ input, ctx }) => {
       const conversationService = new ConversationService();
-      return await conversationService.getConversationHistory(ctx.user.id, input);
+      return await conversationService.getConversationHistory(
+        ctx.user.id,
+        input,
+      );
     }),
 
   // Get conversation session statistics
@@ -223,7 +242,7 @@ export const conversationsRouter = router({
       const conversationService = new ConversationService();
       const stats = await conversationService.getSessionStatistics(
         input.sessionId,
-        ctx.user.id
+        ctx.user.id,
       );
 
       if (!stats) {
@@ -243,7 +262,7 @@ export const conversationsRouter = router({
       const conversationService = new ConversationService();
       const success = await conversationService.pauseConversationSession(
         input.sessionId,
-        ctx.user.id
+        ctx.user.id,
       );
 
       return { success };
@@ -256,7 +275,7 @@ export const conversationsRouter = router({
       const conversationService = new ConversationService();
       const session = await conversationService.resumeConversationSession(
         input.sessionId,
-        ctx.user.id
+        ctx.user.id,
       );
 
       if (!session) {
@@ -272,6 +291,7 @@ export const conversationsRouter = router({
 ```
 
 #### 1.2 Conversation Service Implementation
+
 ```typescript
 // apps/api/src/services/conversation-service.ts
 import { db } from "@repo/database";
@@ -279,7 +299,7 @@ import {
   conversations,
   conversationSessions,
   audioRecordings,
-  audioProcessingResults
+  audioProcessingResults,
 } from "@repo/database/src/schema";
 import { eq, and, isNull, desc, asc, sql } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
@@ -298,15 +318,15 @@ export class ConversationService {
   async startConversationSession(
     userId: string,
     scriptId: string,
-    userRole: "PERSON_A" | "PERSON_B"
+    userRole: "PERSON_A" | "PERSON_B",
   ) {
     // Get script details
     const script = await db.query.conversations.findFirst({
       where: and(
         eq(conversations.id, scriptId),
         eq(conversations.userId, userId),
-        isNull(conversations.deletedAt)
-      )
+        isNull(conversations.deletedAt),
+      ),
     });
 
     if (!script) {
@@ -314,17 +334,20 @@ export class ConversationService {
     }
 
     // Create session
-    const [session] = await db.insert(conversationSessions).values({
-      id: uuidv4(),
-      conversationId: scriptId,
-      userId,
-      startedAt: new Date(),
-      userRole,
-      status: "ACTIVE",
-      completedTurns: 0,
-      totalTurns: script.totalTurns || 0,
-      completionPercentage: 0,
-    }).returning();
+    const [session] = await db
+      .insert(conversationSessions)
+      .values({
+        id: uuidv4(),
+        conversationId: scriptId,
+        userId,
+        startedAt: new Date(),
+        userRole,
+        status: "ACTIVE",
+        completedTurns: 0,
+        totalTurns: script.totalTurns || 0,
+        completionPercentage: 0,
+      })
+      .returning();
 
     return {
       session,
@@ -358,14 +381,19 @@ export class ConversationService {
           title: conversations.title,
           scriptContent: conversations.scriptContent,
           estimatedDurationMinutes: conversations.estimatedDurationMinutes,
-        }
+        },
       })
       .from(conversationSessions)
-      .innerJoin(conversations, eq(conversationSessions.conversationId, conversations.id))
-      .where(and(
-        eq(conversationSessions.id, sessionId),
-        eq(conversationSessions.userId, userId)
-      ))
+      .innerJoin(
+        conversations,
+        eq(conversationSessions.conversationId, conversations.id),
+      )
+      .where(
+        and(
+          eq(conversationSessions.id, sessionId),
+          eq(conversationSessions.userId, userId),
+        ),
+      )
       .limit(1);
 
     if (!session[0]) {
@@ -376,7 +404,7 @@ export class ConversationService {
     const currentTurn = this.calculateCurrentTurn(
       sessionData.conversation.scriptContent,
       sessionData.completedTurns,
-      sessionData.userRole
+      sessionData.userRole,
     );
 
     return {
@@ -405,7 +433,7 @@ export class ConversationService {
         format: string;
         size: number;
       };
-    }
+    },
   ) {
     const session = await this.getConversationSession(sessionId, userId);
     if (!session) {
@@ -417,21 +445,27 @@ export class ConversationService {
     }
 
     // Create audio recording record
-    const [audioRecording] = await db.insert(audioRecordings).values({
-      id: uuidv4(),
-      userId,
-      conversationSessionId: sessionId,
-      conversationId: session.conversation.id,
-      turnNumber: session.completedTurns + 1,
-      scriptLine: session.currentTurn.scriptLine,
-      originalFilename: turnData.type === "AUDIO" ? `turn_${session.completedTurns + 1}` : null,
-      audioFormat: turnData.audioMetadata?.format || "text",
-      durationSeconds: turnData.audioMetadata?.duration || 0,
-      fileSize: turnData.audioMetadata?.size || 0,
-      recordingQuality: "STANDARD",
-      storageProvider: "DATABASE", // For text content
-      filePath: turnData.content, // Store content directly for now
-    }).returning();
+    const [audioRecording] = await db
+      .insert(audioRecordings)
+      .values({
+        id: uuidv4(),
+        userId,
+        conversationSessionId: sessionId,
+        conversationId: session.conversation.id,
+        turnNumber: session.completedTurns + 1,
+        scriptLine: session.currentTurn.scriptLine,
+        originalFilename:
+          turnData.type === "AUDIO"
+            ? `turn_${session.completedTurns + 1}`
+            : null,
+        audioFormat: turnData.audioMetadata?.format || "text",
+        durationSeconds: turnData.audioMetadata?.duration || 0,
+        fileSize: turnData.audioMetadata?.size || 0,
+        recordingQuality: "STANDARD",
+        storageProvider: "DATABASE", // For text content
+        filePath: turnData.content, // Store content directly for now
+      })
+      .returning();
 
     // Process audio if needed
     if (turnData.type === "AUDIO") {
@@ -439,10 +473,12 @@ export class ConversationService {
     }
 
     // Update session
-    await db.update(conversationSessions)
+    await db
+      .update(conversationSessions)
       .set({
         completedTurns: session.completedTurns + 1,
-        completionPercentage: ((session.completedTurns + 1) / session.totalTurns) * 100,
+        completionPercentage:
+          ((session.completedTurns + 1) / session.totalTurns) * 100,
         updatedAt: new Date(),
       })
       .where(eq(conversationSessions.id, sessionId));
@@ -452,7 +488,7 @@ export class ConversationService {
       nextTurn: this.calculateCurrentTurn(
         session.conversation.scriptContent,
         session.completedTurns + 1,
-        session.userRole
+        session.userRole,
       ),
     };
   }
@@ -494,7 +530,7 @@ export class ConversationService {
       nextTurn: this.calculateCurrentTurn(
         session.conversation.scriptContent,
         session.completedTurns,
-        session.userRole
+        session.userRole,
       ),
     };
   }
@@ -503,7 +539,7 @@ export class ConversationService {
     userId: string,
     sessionId: string,
     feedback?: string,
-    rating?: number
+    rating?: number,
   ) {
     const session = await this.getConversationSession(sessionId, userId);
     if (!session) {
@@ -518,7 +554,8 @@ export class ConversationService {
     // Calculate overall score based on performance
     const overallScore = await this.calculateSessionScore(sessionId);
 
-    await db.update(conversationSessions)
+    await db
+      .update(conversationSessions)
       .set({
         status: "COMPLETED",
         endedAt,
@@ -531,7 +568,8 @@ export class ConversationService {
       .where(eq(conversationSessions.id, sessionId));
 
     // Update conversation usage count
-    await db.update(conversations)
+    await db
+      .update(conversations)
       .set({
         usageCount: sql`${conversations.usageCount} + 1`,
         rating: rating || conversations.rating, // Update average rating
@@ -547,12 +585,15 @@ export class ConversationService {
     };
   }
 
-  async getConversationHistory(userId: string, filters: {
-    page: number;
-    limit: number;
-    scriptId?: string;
-    status?: string;
-  }) {
+  async getConversationHistory(
+    userId: string,
+    filters: {
+      page: number;
+      limit: number;
+      scriptId?: string;
+      status?: string;
+    },
+  ) {
     const offset = (filters.page - 1) * filters.limit;
 
     let query = db
@@ -571,15 +612,20 @@ export class ConversationService {
           title: conversations.title,
           difficultyLevel: conversations.difficultyLevel,
           estimatedDurationMinutes: conversations.estimatedDurationMinutes,
-        }
+        },
       })
       .from(conversationSessions)
-      .innerJoin(conversations, eq(conversationSessions.conversationId, conversations.id))
+      .innerJoin(
+        conversations,
+        eq(conversationSessions.conversationId, conversations.id),
+      )
       .where(eq(conversationSessions.userId, userId));
 
     // Apply filters
     if (filters.scriptId) {
-      query = query.where(eq(conversationSessions.conversationId, filters.scriptId));
+      query = query.where(
+        eq(conversationSessions.conversationId, filters.scriptId),
+      );
     }
 
     if (filters.status) {
@@ -621,15 +667,25 @@ export class ConversationService {
     });
 
     const processingResults = await db.query.audioProcessingResults.findMany({
-      where: eq(audioProcessingResults.audioRecordingId, sql`ANY(${audioRecordings.map(ar => ar.id)})`),
+      where: eq(
+        audioProcessingResults.audioRecordingId,
+        sql`ANY(${audioRecordings.map((ar) => ar.id)})`,
+      ),
     });
 
     return {
       session,
       audioRecordings,
       processingResults,
-      averageConfidence: processingResults.reduce((sum, result) => sum + (result.confidenceScore || 0), 0) / processingResults.length,
-      totalProcessingTime: processingResults.reduce((sum, result) => sum + (result.processingTimeMs || 0), 0),
+      averageConfidence:
+        processingResults.reduce(
+          (sum, result) => sum + (result.confidenceScore || 0),
+          0,
+        ) / processingResults.length,
+      totalProcessingTime: processingResults.reduce(
+        (sum, result) => sum + (result.processingTimeMs || 0),
+        0,
+      ),
       completedTurns: session.completedTurns,
       completionPercentage: session.completionPercentage,
       averageScore: session.overallScore,
@@ -637,29 +693,35 @@ export class ConversationService {
   }
 
   async pauseConversationSession(sessionId: string, userId: string) {
-    const result = await db.update(conversationSessions)
+    const result = await db
+      .update(conversationSessions)
       .set({
         status: "PAUSED",
         updatedAt: new Date(),
       })
-      .where(and(
-        eq(conversationSessions.id, sessionId),
-        eq(conversationSessions.userId, userId)
-      ));
+      .where(
+        and(
+          eq(conversationSessions.id, sessionId),
+          eq(conversationSessions.userId, userId),
+        ),
+      );
 
     return result.rowCount > 0;
   }
 
   async resumeConversationSession(sessionId: string, userId: string) {
-    const result = await db.update(conversationSessions)
+    const result = await db
+      .update(conversationSessions)
       .set({
         status: "ACTIVE",
         updatedAt: new Date(),
       })
-      .where(and(
-        eq(conversationSessions.id, sessionId),
-        eq(conversationSessions.userId, userId)
-      ));
+      .where(
+        and(
+          eq(conversationSessions.id, sessionId),
+          eq(conversationSessions.userId, userId),
+        ),
+      );
 
     if (result.rowCount === 0) {
       return null;
@@ -671,7 +733,7 @@ export class ConversationService {
   private calculateCurrentTurn(
     scriptContent: any,
     completedTurns: number,
-    userRole: "PERSON_A" | "PERSON_B"
+    userRole: "PERSON_A" | "PERSON_B",
   ) {
     if (!scriptContent || !scriptContent.dialogue) {
       return {
@@ -722,7 +784,7 @@ export class ConversationService {
 
     // Get processing results to calculate average score
     const results = await db.query.audioProcessingResults.findMany({
-      where: sql`audio_recording_id = ANY(${audioRecordings.map(ar => ar.id)})`,
+      where: sql`audio_recording_id = ANY(${audioRecordings.map((ar) => ar.id)})`,
     });
 
     if (results.length === 0) {
@@ -745,6 +807,7 @@ export class ConversationService {
 ### Step 2: Frontend Conversation Practice Interface
 
 #### 2.1 Conversation Practice Component
+
 ```typescript
 // apps/app/src/components/conversations/ConversationPractice.tsx
 import React, { useState, useEffect, useRef } from "react";
@@ -1259,6 +1322,7 @@ export const ConversationPractice: React.FC<ConversationPracticeProps> = ({
 ## Testing Strategy
 
 ### Conversation Flow Tests
+
 ```typescript
 // apps/api/src/__tests__/conversations.test.ts
 import { describe, it, expect, beforeEach } from "vitest";
@@ -1275,7 +1339,7 @@ describe("Conversation Practice", () => {
     const session = await conversationService.startConversationSession(
       "test-user-id",
       "test-script-id",
-      "PERSON_A"
+      "PERSON_A",
     );
 
     expect(session).toBeDefined();
@@ -1288,7 +1352,7 @@ describe("Conversation Practice", () => {
     const session = await conversationService.startConversationSession(
       "test-user-id",
       "test-script-id",
-      "PERSON_A"
+      "PERSON_A",
     );
 
     const result = await conversationService.submitUserTurn(
@@ -1297,7 +1361,7 @@ describe("Conversation Practice", () => {
       {
         type: "TEXT",
         content: "Hello, how are you?",
-      }
+      },
     );
 
     expect(result.audioRecording).toBeDefined();
@@ -1308,14 +1372,14 @@ describe("Conversation Practice", () => {
     const session = await conversationService.startConversationSession(
       "test-user-id",
       "test-script-id",
-      "PERSON_A"
+      "PERSON_A",
     );
 
     const result = await conversationService.completeConversationSession(
       "test-user-id",
       session.session.id,
       "Great session!",
-      5
+      5,
     );
 
     expect(result.success).toBe(true);
@@ -1328,16 +1392,19 @@ describe("Conversation Practice", () => {
 ## Estimated Timeline: 1 Week
 
 ### Day 1-2: Conversation API
+
 - Create conversation session management
 - Implement turn submission and processing
 - Build conversation history tracking
 
 ### Day 3-4: AI Integration
+
 - Integrate AI response generation
 - Add conversation context handling
 - Implement session completion logic
 
 ### Day 5: Frontend Interface
+
 - Build conversation practice UI
 - Add audio recording integration
 - Create conversation history display

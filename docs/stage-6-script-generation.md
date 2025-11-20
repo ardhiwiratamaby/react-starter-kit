@@ -17,6 +17,7 @@ This stage implements the AI-powered script generation system that converts uplo
 ## Technical Requirements
 
 ### Script Generation Features
+
 - Document-based script generation
 - Topic-based script generation
 - Script template system
@@ -26,6 +27,7 @@ This stage implements the AI-powered script generation system that converts uplo
 - Pronunciation focus areas
 
 ### Script Management
+
 - Script versioning and history
 - Script editing and customization
 - Script metadata and categorization
@@ -38,6 +40,7 @@ This stage implements the AI-powered script generation system that converts uplo
 ### Step 1: Script Generation Service
 
 #### 1.1 Script Generation tRPC Router
+
 ```typescript
 // apps/api/src/router/scripts.ts
 import { router, protectedProcedure } from "./trpc";
@@ -49,21 +52,30 @@ import { AIIntegrationService } from "../services/ai-integration-service";
 export const scriptsRouter = router({
   // Generate script from document
   generateFromDocument: protectedProcedure
-    .input(z.object({
-      documentId: z.string().uuid(),
-      difficultyLevel: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).default("INTERMEDIATE"),
-      targetDurationMinutes: z.number().min(5).max(30).default(10),
-      language: z.string().default("en"),
-      focusAreas: z.array(z.enum(["PRONUNCIATION", "FLUENCY", "RHYTHM", "INTONATION"])).default(["PRONUNCIATION"]),
-      customInstructions: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        documentId: z.string().uuid(),
+        difficultyLevel: z
+          .enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"])
+          .default("INTERMEDIATE"),
+        targetDurationMinutes: z.number().min(5).max(30).default(10),
+        language: z.string().default("en"),
+        focusAreas: z
+          .array(z.enum(["PRONUNCIATION", "FLUENCY", "RHYTHM", "INTONATION"]))
+          .default(["PRONUNCIATION"]),
+        customInstructions: z.string().optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       try {
         const scriptService = new ScriptService();
         const aiService = new AIIntegrationService();
 
         // Get document
-        const document = await scriptService.getDocument(input.documentId, ctx.user.id);
+        const document = await scriptService.getDocument(
+          input.documentId,
+          ctx.user.id,
+        );
         if (!document) {
           throw new TRPCError({
             code: "NOT_FOUND",
@@ -114,17 +126,23 @@ export const scriptsRouter = router({
 
   // Generate script from topic
   generateFromTopic: protectedProcedure
-    .input(z.object({
-      topic: z.string().min(5).max(500),
-      title: z.string().min(1).max(255),
-      description: z.string().optional(),
-      difficultyLevel: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).default("INTERMEDIATE"),
-      targetDurationMinutes: z.number().min(5).max(30).default(10),
-      language: z.string().default("en"),
-      focusAreas: z.array(z.enum(["PRONUNCIATION", "FLUENCY", "RHYTHM", "INTONATION"])).default(["PRONUNCIATION"]),
-      tags: z.array(z.string()).default([]),
-      customInstructions: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        topic: z.string().min(5).max(500),
+        title: z.string().min(1).max(255),
+        description: z.string().optional(),
+        difficultyLevel: z
+          .enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"])
+          .default("INTERMEDIATE"),
+        targetDurationMinutes: z.number().min(5).max(30).default(10),
+        language: z.string().default("en"),
+        focusAreas: z
+          .array(z.enum(["PRONUNCIATION", "FLUENCY", "RHYTHM", "INTONATION"]))
+          .default(["PRONUNCIATION"]),
+        tags: z.array(z.string()).default([]),
+        customInstructions: z.string().optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       try {
         const scriptService = new ScriptService();
@@ -167,16 +185,22 @@ export const scriptsRouter = router({
 
   // Get user scripts
   getAll: protectedProcedure
-    .input(z.object({
-      page: z.number().min(1).default(1),
-      limit: z.number().min(1).max(50).default(20),
-      search: z.string().optional(),
-      tags: z.array(z.string()).optional(),
-      difficultyLevel: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).optional(),
-      isTemplate: z.boolean().optional(),
-      sortBy: z.enum(["createdAt", "updatedAt", "title", "difficultyLevel"]).default("createdAt"),
-      sortOrder: z.enum(["asc", "desc"]).default("desc"),
-    }))
+    .input(
+      z.object({
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).max(50).default(20),
+        search: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        difficultyLevel: z
+          .enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"])
+          .optional(),
+        isTemplate: z.boolean().optional(),
+        sortBy: z
+          .enum(["createdAt", "updatedAt", "title", "difficultyLevel"])
+          .default("createdAt"),
+        sortOrder: z.enum(["asc", "desc"]).default("desc"),
+      }),
+    )
     .query(async ({ input, ctx }) => {
       const scriptService = new ScriptService();
       return await scriptService.getUserScripts(ctx.user.id, input);
@@ -201,27 +225,27 @@ export const scriptsRouter = router({
 
   // Update script
   update: protectedProcedure
-    .input(z.object({
-      id: z.string().uuid(),
-      title: z.string().min(1).max(255),
-      description: z.string().optional(),
-      scriptContent: z.any(), // JSON structure
-      tags: z.array(z.string()).optional(),
-      difficultyLevel: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        title: z.string().min(1).max(255),
+        description: z.string().optional(),
+        scriptContent: z.any(), // JSON structure
+        tags: z.array(z.string()).optional(),
+        difficultyLevel: z
+          .enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"])
+          .optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const scriptService = new ScriptService();
-      const script = await scriptService.updateScript(
-        input.id,
-        ctx.user.id,
-        {
-          title: input.title,
-          description: input.description,
-          scriptContent: input.scriptContent,
-          tags: input.tags,
-          difficultyLevel: input.difficultyLevel,
-        }
-      );
+      const script = await scriptService.updateScript(input.id, ctx.user.id, {
+        title: input.title,
+        description: input.description,
+        scriptContent: input.scriptContent,
+        tags: input.tags,
+        difficultyLevel: input.difficultyLevel,
+      });
 
       if (!script) {
         throw new TRPCError({
@@ -252,16 +276,18 @@ export const scriptsRouter = router({
 
   // Duplicate script
   duplicate: protectedProcedure
-    .input(z.object({
-      id: z.string().uuid(),
-      newTitle: z.string().min(1).max(255),
-    }))
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        newTitle: z.string().min(1).max(255),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const scriptService = new ScriptService();
       const duplicatedScript = await scriptService.duplicateScript(
         input.id,
         ctx.user.id,
-        input.newTitle
+        input.newTitle,
       );
 
       if (!duplicatedScript) {
@@ -276,11 +302,15 @@ export const scriptsRouter = router({
 
   // Get script templates
   getTemplates: protectedProcedure
-    .input(z.object({
-      category: z.string().optional(),
-      difficultyLevel: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).optional(),
-      limit: z.number().min(1).max(20).default(10),
-    }))
+    .input(
+      z.object({
+        category: z.string().optional(),
+        difficultyLevel: z
+          .enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"])
+          .optional(),
+        limit: z.number().min(1).max(20).default(10),
+      }),
+    )
     .query(async ({ input, ctx }) => {
       const scriptService = new ScriptService();
       return await scriptService.getScriptTemplates(ctx.user.id, input);
@@ -288,18 +318,20 @@ export const scriptsRouter = router({
 
   // Create script from template
   createFromTemplate: protectedProcedure
-    .input(z.object({
-      templateId: z.string().uuid(),
-      customTitle: z.string().min(1).max(255),
-      customizations: z.any().optional(), // Custom modifications to the script
-    }))
+    .input(
+      z.object({
+        templateId: z.string().uuid(),
+        customTitle: z.string().min(1).max(255),
+        customizations: z.any().optional(), // Custom modifications to the script
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const scriptService = new ScriptService();
       const script = await scriptService.createFromTemplate(
         input.templateId,
         ctx.user.id,
         input.customTitle,
-        input.customizations
+        input.customizations,
       );
 
       if (!script) {
@@ -314,11 +346,13 @@ export const scriptsRouter = router({
 
   // Validate script quality
   validateScript: protectedProcedure
-    .input(z.object({
-      scriptContent: z.any(), // JSON structure
-      difficultyLevel: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]),
-      language: z.string().default("en"),
-    }))
+    .input(
+      z.object({
+        scriptContent: z.any(), // JSON structure
+        difficultyLevel: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]),
+        language: z.string().default("en"),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const aiService = new AIIntegrationService();
       const validation = await aiService.validateScriptQuality({
@@ -333,6 +367,7 @@ export const scriptsRouter = router({
 ```
 
 #### 1.2 Script Service Implementation
+
 ```typescript
 // apps/api/src/services/script-service.ts
 import { db } from "@repo/database";
@@ -340,9 +375,18 @@ import {
   conversations,
   documents,
   conversationSessions,
-  audioRecordings
+  audioRecordings,
 } from "@repo/database/src/schema";
-import { eq, and, isNull, desc, asc, sql, ilike, arrayContains } from "drizzle-orm";
+import {
+  eq,
+  and,
+  isNull,
+  desc,
+  asc,
+  sql,
+  ilike,
+  arrayContains,
+} from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
 export class ScriptService {
@@ -360,36 +404,42 @@ export class ScriptService {
     sourceDocumentHash?: string;
     generationPrompt?: string;
   }) {
-    const [script] = await db.insert(conversations).values({
-      userId: data.userId,
-      documentId: data.documentId,
-      title: data.title,
-      description: data.description,
-      scriptContent: data.scriptContent,
-      scriptGenerationMode: data.scriptGenerationMode,
-      language: data.language,
-      difficultyLevel: data.difficultyLevel,
-      estimatedDurationMinutes: data.estimatedDurationMinutes,
-      tags: data.tags || [],
-      sourceDocumentHash: data.sourceDocumentHash,
-      generationPrompt: data.generationPrompt,
-      status: "ACTIVE",
-      totalTurns: this.calculateTotalTurns(data.scriptContent),
-    }).returning();
+    const [script] = await db
+      .insert(conversations)
+      .values({
+        userId: data.userId,
+        documentId: data.documentId,
+        title: data.title,
+        description: data.description,
+        scriptContent: data.scriptContent,
+        scriptGenerationMode: data.scriptGenerationMode,
+        language: data.language,
+        difficultyLevel: data.difficultyLevel,
+        estimatedDurationMinutes: data.estimatedDurationMinutes,
+        tags: data.tags || [],
+        sourceDocumentHash: data.sourceDocumentHash,
+        generationPrompt: data.generationPrompt,
+        status: "ACTIVE",
+        totalTurns: this.calculateTotalTurns(data.scriptContent),
+      })
+      .returning();
 
     return script;
   }
 
-  async getUserScripts(userId: string, filters: {
-    page: number;
-    limit: number;
-    search?: string;
-    tags?: string[];
-    difficultyLevel?: string;
-    isTemplate?: boolean;
-    sortBy: string;
-    sortOrder: "asc" | "desc";
-  }) {
+  async getUserScripts(
+    userId: string,
+    filters: {
+      page: number;
+      limit: number;
+      search?: string;
+      tags?: string[];
+      difficultyLevel?: string;
+      isTemplate?: boolean;
+      sortBy: string;
+      sortOrder: "asc" | "desc";
+    },
+  ) {
     const offset = (filters.page - 1) * filters.limit;
 
     let query = db
@@ -412,28 +462,29 @@ export class ScriptService {
       })
       .from(conversations)
       .leftJoin(documents, eq(conversations.documentId, documents.id))
-      .where(and(
-        eq(conversations.userId, userId),
-        isNull(conversations.deletedAt)
-      ));
+      .where(
+        and(eq(conversations.userId, userId), isNull(conversations.deletedAt)),
+      );
 
     // Apply filters
     if (filters.search) {
       query = query.where(
         or(
           ilike(conversations.title, `%${filters.search}%`),
-          ilike(conversations.description, `%${filters.search}%`)
-        )
+          ilike(conversations.description, `%${filters.search}%`),
+        ),
       );
     }
 
     if (filters.difficultyLevel) {
-      query = query.where(eq(conversations.difficultyLevel, filters.difficultyLevel));
+      query = query.where(
+        eq(conversations.difficultyLevel, filters.difficultyLevel),
+      );
     }
 
     if (filters.tags && filters.tags.length > 0) {
       query = query.where(
-        sql`${conversations.tags} && ${JSON.stringify(filters.tags)}`
+        sql`${conversations.tags} && ${JSON.stringify(filters.tags)}`,
       );
     }
 
@@ -442,28 +493,27 @@ export class ScriptService {
     }
 
     // Apply sorting
-    const sortColumn = conversations[filters.sortBy as keyof typeof conversations];
+    const sortColumn =
+      conversations[filters.sortBy as keyof typeof conversations];
     if (sortColumn) {
-      query = filters.sortOrder === "asc"
-        ? query.orderBy(asc(sortColumn))
-        : query.orderBy(desc(sortColumn));
+      query =
+        filters.sortOrder === "asc"
+          ? query.orderBy(asc(sortColumn))
+          : query.orderBy(desc(sortColumn));
     }
 
     // Get total count
     const totalCountQuery = db
       .select({ count: sql<number>`count(*)` })
       .from(conversations)
-      .where(and(
-        eq(conversations.userId, userId),
-        isNull(conversations.deletedAt)
-      ));
+      .where(
+        and(eq(conversations.userId, userId), isNull(conversations.deletedAt)),
+      );
 
     const [{ count: totalCount }] = await totalCountQuery;
 
     // Get paginated results
-    const scriptsList = await query
-      .limit(filters.limit)
-      .offset(offset);
+    const scriptsList = await query.limit(filters.limit).offset(offset);
 
     return {
       scripts: scriptsList,
@@ -501,11 +551,13 @@ export class ScriptService {
       })
       .from(conversations)
       .leftJoin(documents, eq(conversations.documentId, documents.id))
-      .where(and(
-        eq(conversations.id, scriptId),
-        eq(conversations.userId, userId),
-        isNull(conversations.deletedAt)
-      ))
+      .where(
+        and(
+          eq(conversations.id, scriptId),
+          eq(conversations.userId, userId),
+          isNull(conversations.deletedAt),
+        ),
+      )
       .limit(1);
 
     return script[0] || null;
@@ -520,7 +572,7 @@ export class ScriptService {
       scriptContent?: any;
       tags?: string[];
       difficultyLevel?: string;
-    }
+    },
   ) {
     const [script] = await db
       .update(conversations)
@@ -531,10 +583,9 @@ export class ScriptService {
           ? this.calculateTotalTurns(updates.scriptContent)
           : undefined,
       })
-      .where(and(
-        eq(conversations.id, scriptId),
-        eq(conversations.userId, userId)
-      ))
+      .where(
+        and(eq(conversations.id, scriptId), eq(conversations.userId, userId)),
+      )
       .returning();
 
     return script;
@@ -547,46 +598,47 @@ export class ScriptService {
         deletedAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(and(
-        eq(conversations.id, scriptId),
-        eq(conversations.userId, userId)
-      ));
+      .where(
+        and(eq(conversations.id, scriptId), eq(conversations.userId, userId)),
+      );
 
     return result.rowCount > 0;
   }
 
-  async duplicateScript(
-    scriptId: string,
-    userId: string,
-    newTitle: string
-  ) {
+  async duplicateScript(scriptId: string, userId: string, newTitle: string) {
     const originalScript = await this.getScriptById(scriptId, userId);
     if (!originalScript) {
       return null;
     }
 
-    const [duplicatedScript] = await db.insert(conversations).values({
-      userId,
-      title: newTitle,
-      description: originalScript.description,
-      scriptContent: originalScript.scriptContent,
-      scriptGenerationMode: originalScript.scriptGenerationMode,
-      language: originalScript.language,
-      difficultyLevel: originalScript.difficultyLevel,
-      estimatedDurationMinutes: originalScript.estimatedDurationMinutes,
-      tags: originalScript.tags,
-      totalTurns: originalScript.totalTurns,
-      status: "ACTIVE",
-    }).returning();
+    const [duplicatedScript] = await db
+      .insert(conversations)
+      .values({
+        userId,
+        title: newTitle,
+        description: originalScript.description,
+        scriptContent: originalScript.scriptContent,
+        scriptGenerationMode: originalScript.scriptGenerationMode,
+        language: originalScript.language,
+        difficultyLevel: originalScript.difficultyLevel,
+        estimatedDurationMinutes: originalScript.estimatedDurationMinutes,
+        tags: originalScript.tags,
+        totalTurns: originalScript.totalTurns,
+        status: "ACTIVE",
+      })
+      .returning();
 
     return duplicatedScript;
   }
 
-  async getScriptTemplates(userId: string, filters: {
-    category?: string;
-    difficultyLevel?: string;
-    limit: number;
-  }) {
+  async getScriptTemplates(
+    userId: string,
+    filters: {
+      category?: string;
+      difficultyLevel?: string;
+      limit: number;
+    },
+  ) {
     let query = db
       .select({
         id: conversations.id,
@@ -601,19 +653,23 @@ export class ScriptService {
         rating: conversations.rating,
       })
       .from(conversations)
-      .where(and(
-        eq(conversations.isTemplate, true),
-        eq(conversations.isPublic, true),
-        isNull(conversations.deletedAt)
-      ));
+      .where(
+        and(
+          eq(conversations.isTemplate, true),
+          eq(conversations.isPublic, true),
+          isNull(conversations.deletedAt),
+        ),
+      );
 
     if (filters.difficultyLevel) {
-      query = query.where(eq(conversations.difficultyLevel, filters.difficultyLevel));
+      query = query.where(
+        eq(conversations.difficultyLevel, filters.difficultyLevel),
+      );
     }
 
     if (filters.category) {
       query = query.where(
-        sql`${conversations.tags} && ${JSON.stringify([filters.category])}`
+        sql`${conversations.tags} && ${JSON.stringify([filters.category])}`,
       );
     }
 
@@ -626,17 +682,19 @@ export class ScriptService {
     templateId: string,
     userId: string,
     customTitle: string,
-    customizations?: any
+    customizations?: any,
   ) {
     // Get template
     const template = await db
       .select()
       .from(conversations)
-      .where(and(
-        eq(conversations.id, templateId),
-        eq(conversations.isTemplate, true),
-        eq(conversations.isPublic, true)
-      ))
+      .where(
+        and(
+          eq(conversations.id, templateId),
+          eq(conversations.isTemplate, true),
+          eq(conversations.isPublic, true),
+        ),
+      )
       .limit(1);
 
     if (!template[0]) {
@@ -652,19 +710,22 @@ export class ScriptService {
     }
 
     // Create new script from template
-    const [script] = await db.insert(conversations).values({
-      userId,
-      title: customTitle,
-      description: `Created from template: ${templateData.title}`,
-      scriptContent,
-      scriptGenerationMode: "TEMPLATE_BASED",
-      language: templateData.language,
-      difficultyLevel: templateData.difficultyLevel,
-      estimatedDurationMinutes: templateData.estimatedDurationMinutes,
-      tags: templateData.tags,
-      totalTurns: templateData.totalTurns,
-      status: "ACTIVE",
-    }).returning();
+    const [script] = await db
+      .insert(conversations)
+      .values({
+        userId,
+        title: customTitle,
+        description: `Created from template: ${templateData.title}`,
+        scriptContent,
+        scriptGenerationMode: "TEMPLATE_BASED",
+        language: templateData.language,
+        difficultyLevel: templateData.difficultyLevel,
+        estimatedDurationMinutes: templateData.estimatedDurationMinutes,
+        tags: templateData.tags,
+        totalTurns: templateData.totalTurns,
+        status: "ACTIVE",
+      })
+      .returning();
 
     return script;
   }
@@ -673,11 +734,13 @@ export class ScriptService {
     const document = await db
       .select()
       .from(documents)
-      .where(and(
-        eq(documents.id, documentId),
-        eq(documents.userId, userId),
-        isNull(documents.deletedAt)
-      ))
+      .where(
+        and(
+          eq(documents.id, documentId),
+          eq(documents.userId, userId),
+          isNull(documents.deletedAt),
+        ),
+      )
       .limit(1);
 
     return document[0] || null;
@@ -707,6 +770,7 @@ export class ScriptService {
 ### Step 2: AI Integration Service
 
 #### 2.1 Script Generation AI Service
+
 ```typescript
 // apps/api/src/services/ai-integration-service.ts
 import { AIGatewayClient } from "./ai-gateway-client";
@@ -960,7 +1024,7 @@ Provide scores from 0-100 and specific, actionable feedback.
   private parseScriptResponse(response: any): any {
     try {
       // Parse the JSON response from the AI
-      if (typeof response === 'string') {
+      if (typeof response === "string") {
         return JSON.parse(response);
       } else if (response.text) {
         return JSON.parse(response.text);
@@ -975,14 +1039,14 @@ Provide scores from 0-100 and specific, actionable feedback.
       return {
         title: "Generated Script",
         dialogue: response.dialogue || [],
-        error: "Failed to parse AI response completely"
+        error: "Failed to parse AI response completely",
       };
     }
   }
 
   private parseValidationResponse(response: any): any {
     try {
-      if (typeof response === 'string') {
+      if (typeof response === "string") {
         return JSON.parse(response);
       } else if (response.text) {
         return JSON.parse(response.text);
@@ -998,7 +1062,7 @@ Provide scores from 0-100 and specific, actionable feedback.
         scores: {},
         strengths: [],
         improvements: ["Could not parse validation response"],
-        recommendations: []
+        recommendations: [],
       };
     }
   }
@@ -1008,6 +1072,7 @@ Provide scores from 0-100 and specific, actionable feedback.
 ### Step 3: Frontend Script Management UI
 
 #### 3.1 Script Generation Form
+
 ```typescript
 // apps/app/src/components/scripts/ScriptGenerationForm.tsx
 import React, { useState } from "react";
@@ -1349,6 +1414,7 @@ export const ScriptGenerationForm: React.FC<ScriptGenerationFormProps> = ({
 ## Testing Strategy
 
 ### Script Generation Tests
+
 ```typescript
 // apps/api/src/__tests__/script-generation.test.ts
 import { describe, it, expect, beforeEach } from "vitest";
@@ -1379,9 +1445,9 @@ describe("Script Generation", () => {
         {
           speaker: "Person A",
           text: "What do you think about renewable energy?",
-          pronunciationNotes: "Focus on 'renewable' syllable stress"
-        }
-      ]
+          pronunciationNotes: "Focus on 'renewable' syllable stress",
+        },
+      ],
     };
 
     const script = await scriptService.createScript({
@@ -1422,16 +1488,19 @@ describe("Script Generation", () => {
 ## Estimated Timeline: 1 Week
 
 ### Day 1-2: Backend Script Generation
+
 - Create script generation tRPC endpoints
 - Implement AI integration service
 - Build script management service
 
 ### Day 3-4: Script Templates and Validation
+
 - Add script template system
 - Implement script quality validation
 - Create script versioning and history
 
 ### Day 5: Frontend UI
+
 - Build script generation form
 - Create script management interface
 - Add script editing and customization

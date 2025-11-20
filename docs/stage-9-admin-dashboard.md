@@ -18,6 +18,7 @@ This stage implements the comprehensive admin dashboard that extends the React S
 ## Technical Requirements
 
 ### Admin Features
+
 - User management and analytics
 - AI provider configuration and monitoring
 - System health and performance monitoring
@@ -28,6 +29,7 @@ This stage implements the comprehensive admin dashboard that extends the React S
 - System configuration management
 
 ### Analytics & Monitoring
+
 - Real-time usage metrics
 - User behavior analytics
 - AI service performance tracking
@@ -37,6 +39,7 @@ This stage implements the comprehensive admin dashboard that extends the React S
 - Custom report generation
 
 ### Security & Compliance
+
 - Access control and permissions
 - Audit logging and tracking
 - Data privacy controls
@@ -49,6 +52,7 @@ This stage implements the comprehensive admin dashboard that extends the React S
 ### Step 1: Admin Dashboard Router
 
 #### 1.1 Admin tRPC Router
+
 ```typescript
 // apps/api/src/router/admin.ts
 import { router, protectedProcedure } from "./trpc";
@@ -63,15 +67,19 @@ export const adminRouter = router({
   // User Management
   getUsers: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      page: z.number().min(1).default(1),
-      limit: z.number().min(1).max(100).default(20),
-      search: z.string().optional(),
-      status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).optional(),
-      role: z.enum(["USER", "ADMIN"]).optional(),
-      sortBy: z.enum(["createdAt", "lastLogin", "usageCount"]).default("createdAt"),
-      sortOrder: z.enum(["asc", "desc"]).default("desc"),
-    }))
+    .input(
+      z.object({
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).max(100).default(20),
+        search: z.string().optional(),
+        status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).optional(),
+        role: z.enum(["USER", "ADMIN"]).optional(),
+        sortBy: z
+          .enum(["createdAt", "lastLogin", "usageCount"])
+          .default("createdAt"),
+        sortOrder: z.enum(["asc", "desc"]).default("desc"),
+      }),
+    )
     .query(async ({ input }) => {
       const adminService = new AdminService();
       return await adminService.getUsers(input);
@@ -96,13 +104,18 @@ export const adminRouter = router({
 
   updateUserRole: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      userId: z.string().uuid(),
-      role: z.enum(["USER", "ADMIN"]),
-    }))
+    .input(
+      z.object({
+        userId: z.string().uuid(),
+        role: z.enum(["USER", "ADMIN"]),
+      }),
+    )
     .mutation(async ({ input }) => {
       const adminService = new AdminService();
-      const success = await adminService.updateUserRole(input.userId, input.role);
+      const success = await adminService.updateUserRole(
+        input.userId,
+        input.role,
+      );
 
       if (!success) {
         throw new TRPCError({
@@ -116,39 +129,41 @@ export const adminRouter = router({
 
   suspendUser: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      userId: z.string().uuid(),
-      reason: z.string().min(1),
-      duration: z.number().min(1).max(365), // days
-    }))
+    .input(
+      z.object({
+        userId: z.string().uuid(),
+        reason: z.string().min(1),
+        duration: z.number().min(1).max(365), // days
+      }),
+    )
     .mutation(async ({ input }) => {
       const adminService = new AdminService();
       const success = await adminService.suspendUser(
         input.userId,
         input.reason,
-        input.duration
+        input.duration,
       );
 
       return { success };
     }),
 
   // AI Provider Management
-  getAIProviders: protectedProcedure
-    .use(enforceAdmin)
-    .query(async () => {
-      const adminService = new AdminService();
-      return await adminService.getAIProviders();
-    }),
+  getAIProviders: protectedProcedure.use(enforceAdmin).query(async () => {
+    const adminService = new AdminService();
+    return await adminService.getAIProviders();
+  }),
 
   updateAIProviderConfig: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      providerId: z.string().uuid(),
-      serviceType: z.enum(["TTS", "STT", "LLM"]),
-      configuration: z.any(),
-      isActive: z.boolean(),
-      priority: z.number().min(1).max(10),
-    }))
+    .input(
+      z.object({
+        providerId: z.string().uuid(),
+        serviceType: z.enum(["TTS", "STT", "LLM"]),
+        configuration: z.any(),
+        isActive: z.boolean(),
+        priority: z.number().min(1).max(10),
+      }),
+    )
     .mutation(async ({ input }) => {
       const adminService = new AdminService();
       return await adminService.updateAIProviderConfig(input);
@@ -156,29 +171,31 @@ export const adminRouter = router({
 
   testAIProvider: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      providerId: z.string().uuid(),
-      serviceType: z.enum(["TTS", "STT", "LLM"]),
-      testInput: z.string(),
-    }))
+    .input(
+      z.object({
+        providerId: z.string().uuid(),
+        serviceType: z.enum(["TTS", "STT", "LLM"]),
+        testInput: z.string(),
+      }),
+    )
     .mutation(async ({ input }) => {
       const adminService = new AdminService();
       return await adminService.testAIProvider(input);
     }),
 
   // System Monitoring
-  getSystemHealth: protectedProcedure
-    .use(enforceAdmin)
-    .query(async () => {
-      const systemMonitor = new SystemMonitorService();
-      return await systemMonitor.getSystemHealth();
-    }),
+  getSystemHealth: protectedProcedure.use(enforceAdmin).query(async () => {
+    const systemMonitor = new SystemMonitorService();
+    return await systemMonitor.getSystemHealth();
+  }),
 
   getSystemMetrics: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      timeRange: z.enum(["1h", "24h", "7d", "30d"]).default("24h"),
-    }))
+    .input(
+      z.object({
+        timeRange: z.enum(["1h", "24h", "7d", "30d"]).default("24h"),
+      }),
+    )
     .query(async ({ input }) => {
       const systemMonitor = new SystemMonitorService();
       return await systemMonitor.getSystemMetrics(input.timeRange);
@@ -187,20 +204,27 @@ export const adminRouter = router({
   // Analytics
   getUsageAnalytics: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      timeRange: z.enum(["7d", "30d", "90d"]).default("30d"),
-      groupBy: z.enum(["day", "week", "month"]).default("day"),
-    }))
+    .input(
+      z.object({
+        timeRange: z.enum(["7d", "30d", "90d"]).default("30d"),
+        groupBy: z.enum(["day", "week", "month"]).default("day"),
+      }),
+    )
     .query(async ({ input }) => {
       const analyticsService = new AnalyticsService();
-      return await analyticsService.getUsageAnalytics(input.timeRange, input.groupBy);
+      return await analyticsService.getUsageAnalytics(
+        input.timeRange,
+        input.groupBy,
+      );
     }),
 
   getUserAnalytics: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      timeRange: z.enum(["7d", "30d", "90d"]).default("30d"),
-    }))
+    .input(
+      z.object({
+        timeRange: z.enum(["7d", "30d", "90d"]).default("30d"),
+      }),
+    )
     .query(async ({ input }) => {
       const analyticsService = new AnalyticsService();
       return await analyticsService.getUserAnalytics(input.timeRange);
@@ -208,9 +232,11 @@ export const adminRouter = router({
 
   getCostAnalytics: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      timeRange: z.enum(["7d", "30d", "90d"]).default("30d"),
-    }))
+    .input(
+      z.object({
+        timeRange: z.enum(["7d", "30d", "90d"]).default("30d"),
+      }),
+    )
     .query(async ({ input }) => {
       const analyticsService = new AnalyticsService();
       return await analyticsService.getCostAnalytics(input.timeRange);
@@ -219,52 +245,69 @@ export const adminRouter = router({
   // Content Moderation
   getPendingContent: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      contentType: z.enum(["SCRIPTS", "DOCUMENTS"]).default("SCRIPTS"),
-      page: z.number().min(1).default(1),
-      limit: z.number().min(1).max(50).default(20),
-    }))
+    .input(
+      z.object({
+        contentType: z.enum(["SCRIPTS", "DOCUMENTS"]).default("SCRIPTS"),
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).max(50).default(20),
+      }),
+    )
     .query(async ({ input }) => {
       const adminService = new AdminService();
-      return await adminService.getPendingContent(input.contentType, input.page, input.limit);
+      return await adminService.getPendingContent(
+        input.contentType,
+        input.page,
+        input.limit,
+      );
     }),
 
   approveContent: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      contentId: z.string().uuid(),
-      contentType: z.enum(["SCRIPTS", "DOCUMENTS"]),
-    }))
+    .input(
+      z.object({
+        contentId: z.string().uuid(),
+        contentType: z.enum(["SCRIPTS", "DOCUMENTS"]),
+      }),
+    )
     .mutation(async ({ input }) => {
       const adminService = new AdminService();
-      return await adminService.approveContent(input.contentId, input.contentType);
+      return await adminService.approveContent(
+        input.contentId,
+        input.contentType,
+      );
     }),
 
   rejectContent: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      contentId: z.string().uuid(),
-      contentType: z.enum(["SCRIPTS", "DOCUMENTS"]),
-      reason: z.string().min(1),
-    }))
+    .input(
+      z.object({
+        contentId: z.string().uuid(),
+        contentType: z.enum(["SCRIPTS", "DOCUMENTS"]),
+        reason: z.string().min(1),
+      }),
+    )
     .mutation(async ({ input }) => {
       const adminService = new AdminService();
-      return await adminService.rejectContent(input.contentId, input.contentType, input.reason);
+      return await adminService.rejectContent(
+        input.contentId,
+        input.contentType,
+        input.reason,
+      );
     }),
 
   // System Configuration
-  getSystemSettings: protectedProcedure
-    .use(enforceAdmin)
-    .query(async () => {
-      const adminService = new AdminService();
-      return await adminService.getSystemSettings();
-    }),
+  getSystemSettings: protectedProcedure.use(enforceAdmin).query(async () => {
+    const adminService = new AdminService();
+    return await adminService.getSystemSettings();
+  }),
 
   updateSystemSettings: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      settings: z.record(z.any()),
-    }))
+    .input(
+      z.object({
+        settings: z.record(z.any()),
+      }),
+    )
     .mutation(async ({ input }) => {
       const adminService = new AdminService();
       return await adminService.updateSystemSettings(input.settings);
@@ -273,10 +316,12 @@ export const adminRouter = router({
   // Backup and Restore
   createBackup: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      includeUserData: z.boolean().default(true),
-      includeAudioFiles: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        includeUserData: z.boolean().default(true),
+        includeAudioFiles: z.boolean().default(false),
+      }),
+    )
     .mutation(async ({ input }) => {
       const adminService = new AdminService();
       return await adminService.createBackup(input);
@@ -284,10 +329,12 @@ export const adminRouter = router({
 
   restoreBackup: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      backupId: z.string().uuid(),
-      confirmRestore: z.boolean(),
-    }))
+    .input(
+      z.object({
+        backupId: z.string().uuid(),
+        confirmRestore: z.boolean(),
+      }),
+    )
     .mutation(async ({ input }) => {
       if (!input.confirmRestore) {
         throw new TRPCError({
@@ -303,6 +350,7 @@ export const adminRouter = router({
 ```
 
 #### 1.2 Admin Service Implementation
+
 ```typescript
 // apps/api/src/services/admin-service.ts
 import { db } from "@repo/database";
@@ -313,7 +361,7 @@ import {
   documents,
   conversations,
   systemSettings,
-  apiUsageLogs
+  apiUsageLogs,
 } from "@repo/database/src/schema";
 import { eq, and, isNull, desc, asc, sql, ilike } from "drizzle-orm";
 import { AIGatewayClient } from "./ai-gateway-client";
@@ -370,8 +418,8 @@ export class AdminService {
       query = query.where(
         or(
           ilike(users.email, `%${filters.search}%`),
-          ilike(users.name, `%${filters.search}%`)
-        )
+          ilike(users.name, `%${filters.search}%`),
+        ),
       );
     }
 
@@ -382,9 +430,10 @@ export class AdminService {
     // Apply sorting
     const sortColumn = users[filters.sortBy as keyof typeof users];
     if (sortColumn) {
-      query = filters.sortOrder === "asc"
-        ? query.orderBy(asc(sortColumn))
-        : query.orderBy(desc(sortColumn));
+      query =
+        filters.sortOrder === "asc"
+          ? query.orderBy(asc(sortColumn))
+          : query.orderBy(desc(sortColumn));
     }
 
     // Get total count
@@ -395,9 +444,7 @@ export class AdminService {
     const [{ count: totalCount }] = await totalCountQuery;
 
     // Get paginated results
-    const usersList = await query
-      .limit(filters.limit)
-      .offset(offset);
+    const usersList = await query.limit(filters.limit).offset(offset);
 
     return {
       users: usersList,
@@ -460,19 +507,30 @@ export class AdminService {
           WHEN conversation_sessions.id IS NOT NULL THEN 'conversation_session'
           ELSE 'unknown'
         END`.as("type"),
-        id: sql<string>`COALESCE(documents.id::text, conversation_sessions.id::text)`.as("id"),
-        title: sql<string>`COALESCE(documents.title, conversations.title)`.as("title"),
-        createdAt: sql<Date>`COALESCE(documents.created_at, conversation_sessions.started_at)`.as("createdAt"),
+        id: sql<string>`COALESCE(documents.id::text, conversation_sessions.id::text)`.as(
+          "id",
+        ),
+        title: sql<string>`COALESCE(documents.title, conversations.title)`.as(
+          "title",
+        ),
+        createdAt:
+          sql<Date>`COALESCE(documents.created_at, conversation_sessions.started_at)`.as(
+            "createdAt",
+          ),
       })
       .from(users)
       .leftJoin(documents, eq(users.id, documents.userId))
       .leftJoin(conversations, eq(users.id, conversations.userId))
       .leftJoin(
         conversationSessions,
-        eq(conversations.id, conversationSessions.conversationId)
+        eq(conversations.id, conversationSessions.conversationId),
       )
       .where(eq(users.id, userId))
-      .orderBy(desc(sql`COALESCE(documents.created_at, conversation_sessions.started_at)`))
+      .orderBy(
+        desc(
+          sql`COALESCE(documents.created_at, conversation_sessions.started_at)`,
+        ),
+      )
       .limit(10);
 
     // Get usage statistics
@@ -540,15 +598,18 @@ export class AdminService {
     const configs = await db.query.aiProviderConfigs.findMany();
 
     // Group configs by provider
-    const providerConfigs = configs.reduce((acc, config) => {
-      if (!acc[config.providerId]) {
-        acc[config.providerId] = [];
-      }
-      acc[config.providerId].push(config);
-      return acc;
-    }, {} as Record<string, any[]>);
+    const providerConfigs = configs.reduce(
+      (acc, config) => {
+        if (!acc[config.providerId]) {
+          acc[config.providerId] = [];
+        }
+        acc[config.providerId].push(config);
+        return acc;
+      },
+      {} as Record<string, any[]>,
+    );
 
-    return providers.map(provider => ({
+    return providers.map((provider) => ({
       ...provider,
       configs: providerConfigs[provider.id] || [],
     }));
@@ -565,7 +626,7 @@ export class AdminService {
     const existingConfig = await db.query.aiProviderConfigs.findFirst({
       where: and(
         eq(aiProviderConfigs.providerId, data.providerId),
-        eq(aiProviderConfigs.serviceType, data.serviceType)
+        eq(aiProviderConfigs.serviceType, data.serviceType),
       ),
     });
 
@@ -634,7 +695,6 @@ export class AdminService {
         result,
         testedAt: new Date(),
       };
-
     } catch (error) {
       return {
         success: false,
@@ -645,7 +705,11 @@ export class AdminService {
   }
 
   // Content Moderation
-  async getPendingContent(contentType: "SCRIPTS" | "DOCUMENTS", page: number, limit: number) {
+  async getPendingContent(
+    contentType: "SCRIPTS" | "DOCUMENTS",
+    page: number,
+    limit: number,
+  ) {
     const offset = (page - 1) * limit;
 
     let query;
@@ -654,42 +718,46 @@ export class AdminService {
       query = db
         .select()
         .from(conversations)
-        .where(and(
-          eq(conversations.isTemplate, true),
-          eq(conversations.isPublic, false) // Pending approval
-        ))
+        .where(
+          and(
+            eq(conversations.isTemplate, true),
+            eq(conversations.isPublic, false), // Pending approval
+          ),
+        )
         .orderBy(desc(conversations.createdAt));
     } else {
       query = db
         .select()
         .from(documents)
-        .where(and(
-          eq(documents.isPublic, false), // Pending approval
-          eq(documents.status, "READY")
-        ))
+        .where(
+          and(
+            eq(documents.isPublic, false), // Pending approval
+            eq(documents.status, "READY"),
+          ),
+        )
         .orderBy(desc(documents.createdAt));
     }
 
-    const content = await query
-      .limit(limit)
-      .offset(offset);
+    const content = await query.limit(limit).offset(offset);
 
     // Get total count
-    const totalCountQuery = contentType === "SCRIPTS"
-      ? db
-          .select({ count: sql<number>`count(*)` })
-          .from(conversations)
-          .where(and(
-            eq(conversations.isTemplate, true),
-            eq(conversations.isPublic, false)
-          ))
-      : db
-          .select({ count: sql<number>`count(*)` })
-          .from(documents)
-          .where(and(
-            eq(documents.isPublic, false),
-            eq(documents.status, "READY")
-          ));
+    const totalCountQuery =
+      contentType === "SCRIPTS"
+        ? db
+            .select({ count: sql<number>`count(*)` })
+            .from(conversations)
+            .where(
+              and(
+                eq(conversations.isTemplate, true),
+                eq(conversations.isPublic, false),
+              ),
+            )
+        : db
+            .select({ count: sql<number>`count(*)` })
+            .from(documents)
+            .where(
+              and(eq(documents.isPublic, false), eq(documents.status, "READY")),
+            );
 
     const [{ count: totalCount }] = await totalCountQuery;
 
@@ -701,7 +769,10 @@ export class AdminService {
     };
   }
 
-  async approveContent(contentId: string, contentType: "SCRIPTS" | "DOCUMENTS") {
+  async approveContent(
+    contentId: string,
+    contentType: "SCRIPTS" | "DOCUMENTS",
+  ) {
     if (contentType === "SCRIPTS") {
       await db
         .update(conversations)
@@ -728,7 +799,11 @@ export class AdminService {
     return { success: true };
   }
 
-  async rejectContent(contentId: string, contentType: "SCRIPTS" | "DOCUMENTS", reason: string) {
+  async rejectContent(
+    contentId: string,
+    contentType: "SCRIPTS" | "DOCUMENTS",
+    reason: string,
+  ) {
     if (contentType === "SCRIPTS") {
       await db
         .update(conversations)
@@ -772,7 +847,7 @@ export class AdminService {
           value,
           updatedAt: new Date(),
         })
-        .where(eq(systemSettings.key, key))
+        .where(eq(systemSettings.key, key)),
     );
 
     await Promise.all(updatePromises);
@@ -843,6 +918,7 @@ export class AdminService {
 ### Step 2: Frontend Admin Dashboard Components
 
 #### 2.1 Admin Dashboard Layout
+
 ```typescript
 // apps/app/src/pages/admin/Dashboard.tsx
 import React, { useState } from "react";
@@ -1070,6 +1146,7 @@ const SystemSettings: React.FC = () => {
 ## Testing Strategy
 
 ### Admin Dashboard Tests
+
 ```typescript
 // apps/api/src/__tests__/admin.test.ts
 import { describe, it, expect, beforeEach } from "vitest";
@@ -1099,7 +1176,7 @@ describe("Admin Dashboard", () => {
     const providers = await adminService.getAIProviders();
 
     expect(Array.isArray(providers)).toBe(true);
-    providers.forEach(provider => {
+    providers.forEach((provider) => {
       expect(provider).toHaveProperty("id");
       expect(provider).toHaveProperty("name");
       expect(provider).toHaveProperty("configs");
@@ -1123,16 +1200,19 @@ describe("Admin Dashboard", () => {
 ## Estimated Timeline: 1 Week
 
 ### Day 1-2: Admin API Services
+
 - Create admin service implementation
 - Build user management endpoints
 - Implement AI provider configuration
 
 ### Day 3-4: Analytics and Monitoring
+
 - Add usage analytics service
 - Build system monitoring
 - Create content moderation tools
 
 ### Day 5: Frontend Dashboard
+
 - Build admin dashboard UI
 - Create management interfaces
 - Add real-time updates

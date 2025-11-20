@@ -17,6 +17,7 @@ This stage implements the complete document management pipeline for the pronunci
 ## Technical Requirements
 
 ### File Processing
+
 - Support for DOCX, PDF, and TXT file formats
 - High-fidelity document conversion to Markdown
 - File size and type validation
@@ -25,6 +26,7 @@ This stage implements the complete document management pipeline for the pronunci
 - Temporary file cleanup
 
 ### Storage Management
+
 - MinIO S3-compatible storage integration
 - Organized bucket structure for different file types
 - Automatic backup and redundancy
@@ -32,6 +34,7 @@ This stage implements the complete document management pipeline for the pronunci
 - Storage usage monitoring and quotas
 
 ### User Interface
+
 - Drag-and-drop file upload interface
 - Document preview and editing capabilities
 - Search and filtering system
@@ -43,6 +46,7 @@ This stage implements the complete document management pipeline for the pronunci
 ### Step 1: Document Upload API
 
 #### 1.1 File Upload tRPC Router
+
 ```typescript
 // apps/api/src/router/documents.ts
 import { router, protectedProcedure } from "./trpc";
@@ -54,12 +58,14 @@ import { FileService } from "../services/file-service";
 export const documentsRouter = router({
   // Upload document
   upload: protectedProcedure
-    .input(z.object({
-      file: z.any(), // Will be processed as multipart form
-      title: z.string().min(1).max(255),
-      description: z.string().optional(),
-      tags: z.array(z.string()).optional(),
-    }))
+    .input(
+      z.object({
+        file: z.any(), // Will be processed as multipart form
+        title: z.string().min(1).max(255),
+        description: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       try {
         const documentService = new DocumentService();
@@ -84,7 +90,8 @@ export const documentsRouter = router({
         if (!allowedTypes.includes(file.type)) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Invalid file type. Only PDF, DOCX, and TXT files are allowed.",
+            message:
+              "Invalid file type. Only PDF, DOCX, and TXT files are allowed.",
           });
         }
 
@@ -126,15 +133,21 @@ export const documentsRouter = router({
 
   // Get user documents with pagination
   getAll: protectedProcedure
-    .input(z.object({
-      page: z.number().min(1).default(1),
-      limit: z.number().min(1).max(50).default(20),
-      search: z.string().optional(),
-      tags: z.array(z.string()).optional(),
-      status: z.enum(["UPLOADING", "PROCESSING", "READY", "ERROR"]).optional(),
-      sortBy: z.enum(["createdAt", "updatedAt", "title", "fileSize"]).default("createdAt"),
-      sortOrder: z.enum(["asc", "desc"]).default("desc"),
-    }))
+    .input(
+      z.object({
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).max(50).default(20),
+        search: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        status: z
+          .enum(["UPLOADING", "PROCESSING", "READY", "ERROR"])
+          .optional(),
+        sortBy: z
+          .enum(["createdAt", "updatedAt", "title", "fileSize"])
+          .default("createdAt"),
+        sortOrder: z.enum(["asc", "desc"]).default("desc"),
+      }),
+    )
     .query(async ({ input, ctx }) => {
       const documentService = new DocumentService();
       return await documentService.getUserDocuments(ctx.user.id, input);
@@ -145,7 +158,10 @@ export const documentsRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ input, ctx }) => {
       const documentService = new DocumentService();
-      const document = await documentService.getDocumentById(input.id, ctx.user.id);
+      const document = await documentService.getDocumentById(
+        input.id,
+        ctx.user.id,
+      );
 
       if (!document) {
         throw new TRPCError({
@@ -159,12 +175,14 @@ export const documentsRouter = router({
 
   // Update document metadata
   update: protectedProcedure
-    .input(z.object({
-      id: z.string().uuid(),
-      title: z.string().min(1).max(255),
-      description: z.string().optional(),
-      tags: z.array(z.string()).optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        title: z.string().min(1).max(255),
+        description: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const documentService = new DocumentService();
       const document = await documentService.updateDocument(
@@ -174,7 +192,7 @@ export const documentsRouter = router({
           title: input.title,
           description: input.description,
           tags: input.tags,
-        }
+        },
       );
 
       if (!document) {
@@ -194,7 +212,10 @@ export const documentsRouter = router({
       const documentService = new DocumentService();
       const fileService = new FileService();
 
-      const document = await documentService.getDocumentById(input.id, ctx.user.id);
+      const document = await documentService.getDocumentById(
+        input.id,
+        ctx.user.id,
+      );
       if (!document) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -218,7 +239,10 @@ export const documentsRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ input, ctx }) => {
       const documentService = new DocumentService();
-      const status = await documentService.getDocumentProcessingStatus(input.id, ctx.user.id);
+      const status = await documentService.getDocumentProcessingStatus(
+        input.id,
+        ctx.user.id,
+      );
 
       if (!status) {
         throw new TRPCError({
@@ -232,11 +256,13 @@ export const documentsRouter = router({
 
   // Search documents
   search: protectedProcedure
-    .input(z.object({
-      query: z.string().min(1),
-      page: z.number().min(1).default(1),
-      limit: z.number().min(1).max(20).default(10),
-    }))
+    .input(
+      z.object({
+        query: z.string().min(1),
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).max(20).default(10),
+      }),
+    )
     .query(async ({ input, ctx }) => {
       const documentService = new DocumentService();
       return await documentService.searchDocuments(ctx.user.id, input);
@@ -245,6 +271,7 @@ export const documentsRouter = router({
 ```
 
 #### 1.2 Document Service Implementation
+
 ```typescript
 // apps/api/src/services/document-service.ts
 import { db } from "@repo/database";
@@ -263,28 +290,32 @@ export class DocumentService {
     filePath: string;
     tags: string[];
   }) {
-    const [document] = await db.insert(documents).values({
-      userId: data.userId,
-      title: data.title,
-      description: data.description,
-      originalFilename: data.originalFilename,
-      fileSize: data.fileSize,
-      fileMimeType: data.fileMimeType,
-      filePath: data.filePath,
-      status: "UPLOADING",
-      tags: data.tags,
-    }).returning();
+    const [document] = await db
+      .insert(documents)
+      .values({
+        userId: data.userId,
+        title: data.title,
+        description: data.description,
+        originalFilename: data.originalFilename,
+        fileSize: data.fileSize,
+        fileMimeType: data.fileMimeType,
+        filePath: data.filePath,
+        status: "UPLOADING",
+        tags: data.tags,
+      })
+      .returning();
 
     return document;
   }
 
   async processDocument(documentId: string) {
     // Update status to processing
-    await db.update(documents)
+    await db
+      .update(documents)
       .set({
         status: "PROCESSING",
         processingProgress: 0,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(documents.id, documentId));
 
@@ -298,7 +329,8 @@ export class DocumentService {
       }
 
       // Update progress
-      await db.update(documents)
+      await db
+        .update(documents)
         .set({ processingProgress: 25 })
         .where(eq(documents.id, documentId));
 
@@ -306,23 +338,27 @@ export class DocumentService {
       const converter = new DocumentConverter();
       const markdownContent = await converter.convertToMarkdown(
         document.filePath,
-        document.fileMimeType
+        document.fileMimeType,
       );
 
       // Update progress
-      await db.update(documents)
+      await db
+        .update(documents)
         .set({ processingProgress: 75 })
         .where(eq(documents.id, documentId));
 
       // Calculate content hash
-      const contentHash = createHash("sha256").update(markdownContent).digest("hex");
+      const contentHash = createHash("sha256")
+        .update(markdownContent)
+        .digest("hex");
 
       // Calculate word count and reading time
       const wordCount = markdownContent.split(/\s+/).length;
       const readingTimeMinutes = Math.ceil(wordCount / 200); // Average reading speed
 
       // Update document with processed content
-      await db.update(documents)
+      await db
+        .update(documents)
         .set({
           content: markdownContent,
           contentHash,
@@ -342,28 +378,32 @@ export class DocumentService {
         changeSummary: "Initial version from file upload",
         createdAt: new Date(),
       });
-
     } catch (error) {
       console.error("Document processing failed:", error);
-      await db.update(documents)
+      await db
+        .update(documents)
         .set({
           status: "ERROR",
-          processingError: error instanceof Error ? error.message : "Unknown error",
+          processingError:
+            error instanceof Error ? error.message : "Unknown error",
           updatedAt: new Date(),
         })
         .where(eq(documents.id, documentId));
     }
   }
 
-  async getUserDocuments(userId: string, filters: {
-    page: number;
-    limit: number;
-    search?: string;
-    tags?: string[];
-    status?: string;
-    sortBy: string;
-    sortOrder: "asc" | "desc";
-  }) {
+  async getUserDocuments(
+    userId: string,
+    filters: {
+      page: number;
+      limit: number;
+      search?: string;
+      tags?: string[];
+      status?: string;
+      sortBy: string;
+      sortOrder: "asc" | "desc";
+    },
+  ) {
     const offset = (filters.page - 1) * filters.limit;
 
     let query = db
@@ -383,10 +423,7 @@ export class DocumentService {
         updatedAt: documents.updatedAt,
       })
       .from(documents)
-      .where(and(
-        eq(documents.userId, userId),
-        isNull(documents.deletedAt)
-      ));
+      .where(and(eq(documents.userId, userId), isNull(documents.deletedAt)));
 
     // Apply filters
     if (filters.search) {
@@ -394,8 +431,8 @@ export class DocumentService {
         or(
           ilike(documents.title, `%${filters.search}%`),
           ilike(documents.description, `%${filters.search}%`),
-          ilike(documents.content, `%${filters.search}%`)
-        )
+          ilike(documents.content, `%${filters.search}%`),
+        ),
       );
     }
 
@@ -405,33 +442,29 @@ export class DocumentService {
 
     if (filters.tags && filters.tags.length > 0) {
       query = query.where(
-        sql`${documents.tags} && ${JSON.stringify(filters.tags)}`
+        sql`${documents.tags} && ${JSON.stringify(filters.tags)}`,
       );
     }
 
     // Apply sorting
     const sortColumn = documents[filters.sortBy as keyof typeof documents];
     if (sortColumn) {
-      query = filters.sortOrder === "asc"
-        ? query.orderBy(asc(sortColumn))
-        : query.orderBy(desc(sortColumn));
+      query =
+        filters.sortOrder === "asc"
+          ? query.orderBy(asc(sortColumn))
+          : query.orderBy(desc(sortColumn));
     }
 
     // Get total count
     const totalCountQuery = db
       .select({ count: count() })
       .from(documents)
-      .where(and(
-        eq(documents.userId, userId),
-        isNull(documents.deletedAt)
-      ));
+      .where(and(eq(documents.userId, userId), isNull(documents.deletedAt)));
 
     const [{ count: totalCount }] = await totalCountQuery;
 
     // Get paginated results
-    const documentsList = await query
-      .limit(filters.limit)
-      .offset(offset);
+    const documentsList = await query.limit(filters.limit).offset(offset);
 
     return {
       documents: documentsList,
@@ -441,11 +474,14 @@ export class DocumentService {
     };
   }
 
-  async searchDocuments(userId: string, params: {
-    query: string;
-    page: number;
-    limit: number;
-  }) {
+  async searchDocuments(
+    userId: string,
+    params: {
+      query: string;
+      page: number;
+      limit: number;
+    },
+  ) {
     const offset = (params.page - 1) * params.limit;
 
     // Use PostgreSQL full-text search
@@ -455,17 +491,21 @@ export class DocumentService {
         title: documents.title,
         description: documents.description,
         content: documents.content,
-        rank: sql`ts_rank_cd(to_tsvector('english', ${documents.content} || ' ' || ${documents.title}), plainto_tsquery('english', ${params.query}))`.as("rank"),
+        rank: sql`ts_rank_cd(to_tsvector('english', ${documents.content} || ' ' || ${documents.title}), plainto_tsquery('english', ${params.query}))`.as(
+          "rank",
+        ),
         createdAt: documents.createdAt,
         updatedAt: documents.updatedAt,
       })
       .from(documents)
-      .where(and(
-        eq(documents.userId, userId),
-        eq(documents.status, "READY"),
-        isNull(documents.deletedAt),
-        sql`to_tsvector('english', ${documents.content} || ' ' || ${documents.title}) @@ plainto_tsquery('english', ${params.query})`
-      ))
+      .where(
+        and(
+          eq(documents.userId, userId),
+          eq(documents.status, "READY"),
+          isNull(documents.deletedAt),
+          sql`to_tsvector('english', ${documents.content} || ' ' || ${documents.title}) @@ plainto_tsquery('english', ${params.query})`,
+        ),
+      )
       .orderBy(desc(sql`rank`))
       .limit(params.limit)
       .offset(offset);
@@ -477,21 +517,22 @@ export class DocumentService {
     };
   }
 
-  async updateDocument(documentId: string, userId: string, updates: {
-    title?: string;
-    description?: string;
-    tags?: string[];
-  }) {
+  async updateDocument(
+    documentId: string,
+    userId: string,
+    updates: {
+      title?: string;
+      description?: string;
+      tags?: string[];
+    },
+  ) {
     const [document] = await db
       .update(documents)
       .set({
         ...updates,
         updatedAt: new Date(),
       })
-      .where(and(
-        eq(documents.id, documentId),
-        eq(documents.userId, userId)
-      ))
+      .where(and(eq(documents.id, documentId), eq(documents.userId, userId)))
       .returning();
 
     return document;
@@ -505,10 +546,7 @@ export class DocumentService {
         deletedAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(and(
-        eq(documents.id, documentId),
-        eq(documents.userId, userId)
-      ));
+      .where(and(eq(documents.id, documentId), eq(documents.userId, userId)));
   }
 
   async getDocumentById(documentId: string, userId: string) {
@@ -516,7 +554,7 @@ export class DocumentService {
       where: and(
         eq(documents.id, documentId),
         eq(documents.userId, userId),
-        isNull(documents.deletedAt)
+        isNull(documents.deletedAt),
       ),
     });
 
@@ -525,10 +563,7 @@ export class DocumentService {
 
   async getDocumentProcessingStatus(documentId: string, userId: string) {
     const document = await db.query.documents.findFirst({
-      where: and(
-        eq(documents.id, documentId),
-        eq(documents.userId, userId)
-      ),
+      where: and(eq(documents.id, documentId), eq(documents.userId, userId)),
       columns: {
         id: true,
         status: true,
@@ -545,6 +580,7 @@ export class DocumentService {
 ### Step 2: Document Conversion Service
 
 #### 2.1 Mark-It-Down Integration
+
 ```typescript
 // apps/api/src/services/document-converter.ts
 import { MinioService } from "./minio-service";
@@ -584,7 +620,9 @@ export class DocumentConverter {
       return this.formatAsMarkdown(text, mimeType);
     } catch (error) {
       console.error("Document conversion error:", error);
-      throw new Error(`Failed to convert document: ${error instanceof Error ? error.message : "Unknown error"}`);
+      throw new Error(
+        `Failed to convert document: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -593,7 +631,9 @@ export class DocumentConverter {
       const result = await mammoth.convertToMarkdown(buffer);
       return result.value;
     } catch (error) {
-      throw new Error(`DOCX conversion failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      throw new Error(
+        `DOCX conversion failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -602,7 +642,9 @@ export class DocumentConverter {
       const data = await pdf(buffer);
       return this.formatPdfTextAsMarkdown(data.text);
     } catch (error) {
-      throw new Error(`PDF conversion failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      throw new Error(
+        `PDF conversion failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -610,9 +652,9 @@ export class DocumentConverter {
     // Split text into paragraphs and format as Markdown
     return text
       .split(/\n\s*\n/)
-      .map(paragraph => {
+      .map((paragraph) => {
         // Detect headings (lines with fewer words and often centered or larger)
-        const lines = paragraph.split('\n');
+        const lines = paragraph.split("\n");
         if (lines.length === 1 && lines[0].trim().length < 100) {
           // Likely a heading
           return `## ${lines[0].trim()}\n`;
@@ -620,15 +662,15 @@ export class DocumentConverter {
         // Regular paragraph
         return `${paragraph.trim()}\n`;
       })
-      .join('\n');
+      .join("\n");
   }
 
   private formatAsMarkdown(text: string, sourceType: string): string {
     let markdown = text;
 
     // Clean up common formatting issues
-    markdown = markdown.replace(/\r\n/g, '\n'); // Normalize line endings
-    markdown = markdown.replace(/\n{3,}/g, '\n\n'); // Remove excessive blank lines
+    markdown = markdown.replace(/\r\n/g, "\n"); // Normalize line endings
+    markdown = markdown.replace(/\n{3,}/g, "\n\n"); // Remove excessive blank lines
     markdown = markdown.trim();
 
     // Add metadata header
@@ -647,6 +689,7 @@ processed: ${new Date().toISOString()}
 ### Step 3: File Storage Service
 
 #### 3.1 MinIO Integration
+
 ```typescript
 // apps/api/src/services/minio-service.ts
 import { Client } from "minio";
@@ -670,10 +713,10 @@ export class MinioService {
     file: Buffer,
     userId: string,
     originalFilename: string,
-    mimeType: string
+    mimeType: string,
   ): Promise<string> {
     // Generate unique filename
-    const fileExtension = originalFilename.split('.').pop() || "bin";
+    const fileExtension = originalFilename.split(".").pop() || "bin";
     const uniqueFilename = `${uuidv4()}.${fileExtension}`;
 
     // Organize files by user and type
@@ -690,18 +733,12 @@ export class MinioService {
       }
 
       // Upload file
-      await this.client.putObject(
-        bucketName,
-        objectName,
-        file,
-        undefined,
-        {
-          "Content-Type": mimeType,
-          "X-Amz-Meta-Original-Filename": originalFilename,
-          "X-Amz-Meta-Uploader-Id": userId,
-          "X-Amz-Meta-Upload-Time": new Date().toISOString(),
-        }
-      );
+      await this.client.putObject(bucketName, objectName, file, undefined, {
+        "Content-Type": mimeType,
+        "X-Amz-Meta-Original-Filename": originalFilename,
+        "X-Amz-Meta-Uploader-Id": userId,
+        "X-Amz-Meta-Upload-Time": new Date().toISOString(),
+      });
 
       return `${bucketName}/${objectName}`;
     } catch (error) {
@@ -712,8 +749,8 @@ export class MinioService {
 
   async getFile(filePath: string): Promise<Buffer> {
     try {
-      const [bucketName, ...objectPathParts] = filePath.split('/');
-      const objectName = objectPathParts.join('/');
+      const [bucketName, ...objectPathParts] = filePath.split("/");
+      const objectName = objectPathParts.join("/");
 
       const stream = await this.client.getObject(bucketName, objectName);
       return await this.streamToBuffer(stream);
@@ -725,8 +762,8 @@ export class MinioService {
 
   async deleteFile(filePath: string): Promise<void> {
     try {
-      const [bucketName, ...objectPathParts] = filePath.split('/');
-      const objectName = objectPathParts.join('/');
+      const [bucketName, ...objectPathParts] = filePath.split("/");
+      const objectName = objectPathParts.join("/");
 
       await this.client.removeObject(bucketName, objectName);
     } catch (error) {
@@ -735,12 +772,19 @@ export class MinioService {
     }
   }
 
-  async getFileUrl(filePath: string, expiresIn: number = 3600): Promise<string> {
+  async getFileUrl(
+    filePath: string,
+    expiresIn: number = 3600,
+  ): Promise<string> {
     try {
-      const [bucketName, ...objectPathParts] = filePath.split('/');
-      const objectName = objectPathParts.join('/');
+      const [bucketName, ...objectPathParts] = filePath.split("/");
+      const objectName = objectPathParts.join("/");
 
-      return await this.client.presignedGetObject(bucketName, objectName, expiresIn);
+      return await this.client.presignedGetObject(
+        bucketName,
+        objectName,
+        expiresIn,
+      );
     } catch (error) {
       console.error("MinIO URL generation error:", error);
       throw new Error("Failed to generate file URL");
@@ -777,6 +821,7 @@ export class MinioService {
 ```
 
 #### 3.2 File Upload Middleware
+
 ```typescript
 // apps/api/src/middleware/upload.ts
 import multer from "multer";
@@ -800,7 +845,11 @@ const upload = multer({
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Invalid file type. Only PDF, DOCX, and TXT files are allowed."));
+      cb(
+        new Error(
+          "Invalid file type. Only PDF, DOCX, and TXT files are allowed.",
+        ),
+      );
     }
   },
 });
@@ -811,7 +860,7 @@ export const handleUploadError = (
   err: any,
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   if (err instanceof multer.MulterError) {
     if (err.code === "LIMIT_FILE_SIZE") {
@@ -839,6 +888,7 @@ export const handleUploadError = (
 ### Step 4: Frontend Document Management UI
 
 #### 4.1 Document Upload Component
+
 ```typescript
 // apps/app/src/components/documents/DocumentUpload.tsx
 import React, { useState, useCallback } from "react";
@@ -1095,6 +1145,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadComplete
 ```
 
 #### 4.2 Document List Component
+
 ```typescript
 // apps/app/src/components/documents/DocumentList.tsx
 import React, { useState } from "react";
@@ -1323,6 +1374,7 @@ export const DocumentList: React.FC = () => {
 ## Testing Strategy
 
 ### Document Processing Tests
+
 ```typescript
 // apps/api/src/__tests__/document-service.test.ts
 import { describe, it, expect, beforeEach } from "vitest";
@@ -1360,7 +1412,7 @@ describe("Document Management", () => {
 
     const markdown = await converter.convertToMarkdown(
       "test.pdf",
-      "application/pdf"
+      "application/pdf",
     );
 
     expect(markdown).toContain("source: application/pdf");
@@ -1381,6 +1433,7 @@ describe("Document Management", () => {
 ```
 
 ### File Upload Tests
+
 ```bash
 # Test file upload endpoint
 curl -X POST http://localhost:4000/api/documents/upload \
@@ -1399,16 +1452,19 @@ curl http://localhost:9000/minio/health/live
 ## Estimated Timeline: 1 Week
 
 ### Day 1-2: Backend Implementation
+
 - Create document upload tRPC endpoints
 - Implement document conversion service
 - Set up MinIO integration
 
 ### Day 3-4: File Processing and Storage
+
 - Implement file processing pipeline
 - Add document management features
 - Set up file cleanup and maintenance
 
 ### Day 5: Frontend UI
+
 - Create document upload component
 - Build document list interface
 - Add search and filtering functionality
@@ -1431,6 +1487,7 @@ curl http://localhost:9000/minio/health/live
 ## Troubleshooting
 
 ### Common Issues
+
 1. **File size limits** - Check both frontend and backend size limits
 2. **MIME type validation** - Ensure correct file type detection
 3. **MinIO connection** - Verify container networking and credentials
@@ -1438,6 +1495,7 @@ curl http://localhost:9000/minio/health/live
 5. **Processing timeouts** - Monitor for large file processing
 
 ### Debug Commands
+
 ```bash
 # Check MinIO buckets
 curl http://localhost:9001/minio/ui

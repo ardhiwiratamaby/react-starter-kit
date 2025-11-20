@@ -16,6 +16,7 @@ This stage focuses on extending the database schema to support all pronunciation
 ## Technical Requirements
 
 ### Database Extensions
+
 - UUID support for primary keys
 - JSONB for flexible data storage
 - Full-text search for document content
@@ -23,6 +24,7 @@ This stage focuses on extending the database schema to support all pronunciation
 - Connection pooling for performance
 
 ### Core Data Models
+
 - Users and authentication (extended from Stage 1)
 - Documents and file management
 - Conversations and practice sessions
@@ -35,6 +37,7 @@ This stage focuses on extending the database schema to support all pronunciation
 ### Step 1: PostgreSQL Container Configuration
 
 #### 1.1 Enhanced PostgreSQL Setup
+
 ```yaml
 # Update to docker-compose.dev.yml
 postgres:
@@ -69,6 +72,7 @@ postgres:
 ```
 
 #### 1.2 Database Initialization Script
+
 ```sql
 -- database/init/01-extensions.sql
 -- Enable required PostgreSQL extensions
@@ -90,6 +94,7 @@ CREATE TYPE script_generation_mode AS ENUM ('DOCUMENT_BASED', 'TOPIC_BASED', 'TE
 ### Step 2: Complete Database Schema
 
 #### 2.1 User Management Tables
+
 ```sql
 -- database/init/02-users.sql
 CREATE TABLE users (
@@ -138,6 +143,7 @@ CREATE INDEX idx_user_sessions_expires_at ON user_sessions(expires_at);
 ```
 
 #### 2.2 Document Management Tables
+
 ```sql
 -- database/init/03-documents.sql
 CREATE TABLE documents (
@@ -190,6 +196,7 @@ CREATE UNIQUE INDEX idx_document_versions_unique ON document_versions(document_i
 ```
 
 #### 2.3 Conversation and Script Tables
+
 ```sql
 -- database/init/04-conversations.sql
 CREATE TABLE conversations (
@@ -249,6 +256,7 @@ CREATE INDEX idx_conversation_sessions_started_at ON conversation_sessions(start
 ```
 
 #### 2.4 Audio Recording Tables
+
 ```sql
 -- database/init/05-audio.sql
 CREATE TABLE audio_recordings (
@@ -297,6 +305,7 @@ CREATE INDEX idx_audio_processing_results_audio_id ON audio_processing_results(a
 ```
 
 #### 2.5 Pronunciation Feedback Tables
+
 ```sql
 -- database/init/06-feedback.sql
 CREATE TABLE pronunciation_feedback (
@@ -352,6 +361,7 @@ CREATE UNIQUE INDEX idx_user_progress_unique ON user_progress(user_id, skill_are
 ```
 
 #### 2.6 AI Provider and Configuration Tables
+
 ```sql
 -- database/init/07-ai-providers.sql
 CREATE TABLE ai_providers (
@@ -418,6 +428,7 @@ CREATE INDEX idx_api_usage_logs_created_at ON api_usage_logs(created_at);
 ```
 
 #### 2.7 System Configuration Tables
+
 ```sql
 -- database/init/08-system-config.sql
 CREATE TABLE system_settings (
@@ -463,58 +474,87 @@ INSERT INTO feature_flags (name, is_enabled, description) VALUES
 ### Step 3: Drizzle ORM Configuration
 
 #### 3.1 Drizzle Schema Setup
+
 ```typescript
 // packages/database/src/schema/index.ts
-import { pgTable, uuid, varchar, text, boolean, integer, decimal, timestamp, jsonb, pgEnum } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  boolean,
+  integer,
+  decimal,
+  timestamp,
+  jsonb,
+  pgEnum,
+} from "drizzle-orm/pg-core";
 
 // Enums
-export const userRoleEnum = pgEnum('user_role', ['USER', 'ADMIN']);
-export const documentStatusEnum = pgEnum('document_status', ['UPLOADING', 'PROCESSING', 'READY', 'ERROR']);
-export const conversationStatusEnum = pgEnum('conversation_status', ['ACTIVE', 'COMPLETED', 'PAUSED']);
-export const audioFormatEnum = pgEnum('audio_format', ['WEBM', 'MP3', 'WAV', 'OGG']);
+export const userRoleEnum = pgEnum("user_role", ["USER", "ADMIN"]);
+export const documentStatusEnum = pgEnum("document_status", [
+  "UPLOADING",
+  "PROCESSING",
+  "READY",
+  "ERROR",
+]);
+export const conversationStatusEnum = pgEnum("conversation_status", [
+  "ACTIVE",
+  "COMPLETED",
+  "PAUSED",
+]);
+export const audioFormatEnum = pgEnum("audio_format", [
+  "WEBM",
+  "MP3",
+  "WAV",
+  "OGG",
+]);
 
 // Users table
-export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  name: varchar('name', { length: 255 }).notNull(),
-  avatarUrl: varchar('avatar_url', { length: 500 }),
-  role: userRoleEnum('role').default('USER'),
-  emailVerified: boolean('email_verified').default(false),
-  preferences: jsonb('preferences').default('{}'),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow()
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  avatarUrl: varchar("avatar_url", { length: 500 }),
+  role: userRoleEnum("role").default("USER"),
+  emailVerified: boolean("email_verified").default(false),
+  preferences: jsonb("preferences").default("{}"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Documents table
-export const documents = pgTable('documents', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  title: varchar('title', { length: 255 }).notNull(),
-  description: text('description'),
-  originalFilename: varchar('original_filename', { length: 255 }),
-  fileSize: integer('file_size'),
-  fileMimeType: varchar('file_mime_type', { length: 100 }),
-  filePath: varchar('file_path', { length: 500 }),
-  content: text('content'),
-  contentHash: varchar('content_hash', { length: 64 }),
-  status: documentStatusEnum('status').default('UPLOADING'),
-  language: varchar('language', { length: 10 }).default('en'),
-  wordCount: integer('word_count'),
-  tags: jsonb('tags').default('[]'),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow()
+export const documents = pgTable("documents", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  originalFilename: varchar("original_filename", { length: 255 }),
+  fileSize: integer("file_size"),
+  fileMimeType: varchar("file_mime_type", { length: 100 }),
+  filePath: varchar("file_path", { length: 500 }),
+  content: text("content"),
+  contentHash: varchar("content_hash", { length: 64 }),
+  status: documentStatusEnum("status").default("UPLOADING"),
+  language: varchar("language", { length: 10 }).default("en"),
+  wordCount: integer("word_count"),
+  tags: jsonb("tags").default("[]"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Add other table definitions...
 ```
 
 #### 3.2 Database Configuration
+
 ```typescript
 // packages/database/src/index.ts
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as schema from './schema';
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import * as schema from "./schema";
 
 const connectionString = process.env.DATABASE_URL!;
 
@@ -532,17 +572,18 @@ export { schema };
 ### Step 4: Migration and Seeding Scripts
 
 #### 4.1 Migration Script
+
 ```typescript
 // packages/database/scripts/migrate.ts
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import { migrationDb } from '../src';
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import { migrationDb } from "../src";
 
 async function runMigrations() {
   try {
-    await migrate(migrationDb, { migrationsFolder: './migrations' });
-    console.log('✅ Migrations completed successfully');
+    await migrate(migrationDb, { migrationsFolder: "./migrations" });
+    console.log("✅ Migrations completed successfully");
   } catch (error) {
-    console.error('❌ Migration failed:', error);
+    console.error("❌ Migration failed:", error);
     process.exit(1);
   }
 }
@@ -551,37 +592,38 @@ runMigrations();
 ```
 
 #### 4.2 Seeding Script
+
 ```typescript
 // packages/database/scripts/seed.ts
-import { migrationDb, schema } from '../src';
+import { migrationDb, schema } from "../src";
 
 async function seed() {
   try {
     // Seed AI providers
     await migrationDb.insert(schema.aiProviders).values([
       {
-        name: 'OPENAI',
-        displayName: 'OpenAI',
-        description: 'OpenAI GPT models and services',
-        apiEndpointBase: 'https://api.openai.com/v1',
-        authenticationType: 'API_KEY',
-        supportedFeatures: ['TTS', 'STT', 'LLM'],
-        isConfigured: false
+        name: "OPENAI",
+        displayName: "OpenAI",
+        description: "OpenAI GPT models and services",
+        apiEndpointBase: "https://api.openai.com/v1",
+        authenticationType: "API_KEY",
+        supportedFeatures: ["TTS", "STT", "LLM"],
+        isConfigured: false,
       },
       {
-        name: 'GOOGLE',
-        displayName: 'Google Cloud AI',
-        description: 'Google Cloud AI/ML services',
-        apiEndpointBase: 'https://texttospeech.googleapis.com/v1',
-        authenticationType: 'SERVICE_ACCOUNT',
-        supportedFeatures: ['TTS', 'STT', 'LLM'],
-        isConfigured: false
-      }
+        name: "GOOGLE",
+        displayName: "Google Cloud AI",
+        description: "Google Cloud AI/ML services",
+        apiEndpointBase: "https://texttospeech.googleapis.com/v1",
+        authenticationType: "SERVICE_ACCOUNT",
+        supportedFeatures: ["TTS", "STT", "LLM"],
+        isConfigured: false,
+      },
     ]);
 
-    console.log('✅ Database seeded successfully');
+    console.log("✅ Database seeded successfully");
   } catch (error) {
-    console.error('❌ Seeding failed:', error);
+    console.error("❌ Seeding failed:", error);
     process.exit(1);
   }
 }
@@ -592,6 +634,7 @@ seed();
 ### Step 5: MinIO Configuration
 
 #### 5.1 MinIO Bucket Setup
+
 ```yaml
 # Add to docker-compose.dev.yml
 minio-setup:
@@ -612,27 +655,29 @@ minio-setup:
 ```
 
 #### 5.2 Storage Configuration Script
+
 ```typescript
 // packages/storage/src/config.ts
 export const storageConfig = {
   buckets: {
-    documents: 'documents',
-    recordings: 'recordings',
-    temp: 'temp',
-    backups: 'backups'
+    documents: "documents",
+    recordings: "recordings",
+    temp: "temp",
+    backups: "backups",
   },
   policies: {
-    documents: 'private', // User can only access their own documents
-    recordings: 'private', // User can only access their own recordings
-    temp: 'public', // Temporary files accessible via URL
-    backups: 'private' // System backups
-  }
+    documents: "private", // User can only access their own documents
+    recordings: "private", // User can only access their own recordings
+    temp: "public", // Temporary files accessible via URL
+    backups: "private", // System backups
+  },
 };
 ```
 
 ## Testing Strategy
 
 ### Database Tests
+
 ```bash
 # Run database tests
 docker-compose -f docker-compose.dev.yml exec api bun run test:db
@@ -645,6 +690,7 @@ docker-compose -f docker-compose.dev.yml exec api bun run db:seed
 ```
 
 ### Connection Validation
+
 ```bash
 # Test PostgreSQL connection
 docker-compose -f docker-compose.dev.yml exec postgres psql -U postgres -d pronunciation_assistant -c "SELECT version();"
@@ -659,16 +705,19 @@ docker-compose -f docker-compose.dev.yml exec redis redis-cli ping
 ## Estimated Timeline: 1 Week
 
 ### Day 1-2: Schema Design and PostgreSQL Setup
+
 - Complete database schema design
 - Configure PostgreSQL container with extensions
 - Set up persistent volumes and backup strategy
 
 ### Day 3-4: Drizzle ORM Integration
+
 - Set up Drizzle schema definitions
 - Create migration scripts
 - Implement seeding scripts
 
 ### Day 5: Storage and Testing
+
 - Configure MinIO buckets and policies
 - Set up Redis for caching
 - Test all database operations
@@ -690,6 +739,7 @@ docker-compose -f docker-compose.dev.yml exec redis redis-cli ping
 ## Monitoring and Maintenance
 
 ### Database Health Checks
+
 ```sql
 -- Monitor database performance
 SELECT
@@ -704,6 +754,7 @@ FROM pg_stat_user_tables;
 ```
 
 ### Backup Scripts
+
 ```bash
 #!/bin/bash
 # scripts/backup-db.sh

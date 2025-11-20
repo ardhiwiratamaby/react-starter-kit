@@ -18,6 +18,7 @@ This stage implements the complete audio recording and processing pipeline for t
 ## Technical Requirements
 
 ### Audio Recording
+
 - Web Audio API integration
 - Multiple audio format support (WebM, MP3, WAV)
 - Audio quality control and optimization
@@ -26,6 +27,7 @@ This stage implements the complete audio recording and processing pipeline for t
 - Real-time waveform visualization
 
 ### Speech Processing
+
 - High-accuracy speech-to-text conversion
 - Multiple STT provider integration
 - Real-time transcription feedback
@@ -34,6 +36,7 @@ This stage implements the complete audio recording and processing pipeline for t
 - Word-level timing analysis
 
 ### Audio Storage
+
 - Efficient audio compression
 - Metadata preservation
 - File organization and management
@@ -46,6 +49,7 @@ This stage implements the complete audio recording and processing pipeline for t
 ### Step 1: Frontend Audio Recording System
 
 #### 1.1 Audio Recorder Component
+
 ```typescript
 // apps/app/src/components/audio/AudioRecorder.tsx
 import React, { useState, useRef, useCallback } from "react";
@@ -323,6 +327,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
 ```
 
 #### 1.2 Audio Player Component
+
 ```typescript
 // apps/app/src/components/audio/AudioPlayer.tsx
 import React, { useState, useRef, useEffect } from "react";
@@ -529,13 +534,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 ### Step 2: Backend Audio Processing Service
 
 #### 2.1 Audio Processing Service
+
 ```typescript
 // apps/api/src/services/audio-processing-service.ts
 import { db } from "@repo/database";
 import {
   audioRecordings,
   audioProcessingResults,
-  pronunciationFeedback
+  pronunciationFeedback,
 } from "@repo/database/src/schema";
 import { eq, and } from "drizzle-orm";
 import { AIGatewayClient } from "./ai-gateway-client";
@@ -562,16 +568,20 @@ export class AudioProcessingService {
       }
 
       // Store audio file in MinIO
-      const audioBlob = this.base64ToBlob(audioData, audioRecording.audioFormat);
+      const audioBlob = this.base64ToBlob(
+        audioData,
+        audioRecording.audioFormat,
+      );
       const filePath = await this.minioService.storeFile(
         Buffer.from(await audioBlob.arrayBuffer()),
         audioRecording.userId,
         `recording_${audioRecordingId}.${audioRecording.audioFormat}`,
-        `audio/${audioRecording.audioFormat}`
+        `audio/${audioRecording.audioFormat}`,
       );
 
       // Update audio recording with file path
-      await db.update(audioRecordings)
+      await db
+        .update(audioRecordings)
         .set({
           filePath,
           updatedAt: new Date(),
@@ -582,15 +592,18 @@ export class AudioProcessingService {
       const sttResult = await this.aiClient.speechToText(audioData);
 
       // Save processing result
-      const [processingResult] = await db.insert(audioProcessingResults).values({
-        audioRecordingId,
-        transcription: sttResult.text,
-        confidenceScore: sttResult.confidence,
-        processingProvider: sttResult.provider,
-        processingTimeMs: sttResult.response_time_ms,
-        processingCost: sttResult.cost_usd,
-        wordTimestamps: sttResult.metadata?.word_timestamps || {},
-      }).returning();
+      const [processingResult] = await db
+        .insert(audioProcessingResults)
+        .values({
+          audioRecordingId,
+          transcription: sttResult.text,
+          confidenceScore: sttResult.confidence,
+          processingProvider: sttResult.provider,
+          processingTimeMs: sttResult.response_time_ms,
+          processingCost: sttResult.cost_usd,
+          wordTimestamps: sttResult.metadata?.word_timestamps || {},
+        })
+        .returning();
 
       // Generate pronunciation feedback
       const feedbackResult = await this.generatePronunciationFeedback(
@@ -598,7 +611,7 @@ export class AudioProcessingService {
         audioRecording.userId,
         processingResult.id,
         sttResult.text,
-        audioRecording.scriptLine
+        audioRecording.scriptLine,
       );
 
       return {
@@ -607,10 +620,11 @@ export class AudioProcessingService {
         confidenceScore: sttResult.confidence,
         feedback: feedbackResult,
       };
-
     } catch (error) {
       console.error("Audio processing failed:", error);
-      throw new Error(`Audio processing failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      throw new Error(
+        `Audio processing failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -619,7 +633,7 @@ export class AudioProcessingService {
     userId: string,
     processingResultId: string,
     transcription: string,
-    targetText: string
+    targetText: string,
   ) {
     try {
       // Get pronunciation feedback from AI
@@ -630,40 +644,45 @@ export class AudioProcessingService {
       });
 
       // Save feedback to database
-      const [feedback] = await db.insert(pronunciationFeedback).values({
-        audioRecordingId,
-        userId,
-        feedbackType: "PRONUNCIATION",
-        overallScore: feedbackResponse.overallScore,
-        detailedScores: feedbackResponse.detailedScores,
-        phoneticAccuracy: feedbackResponse.phoneticAccuracy,
-        wordLevelFeedback: feedbackResponse.wordLevelFeedback,
-        suggestions: feedbackResponse.suggestions,
-        strengths: feedbackResponse.strengths,
-        areasForImprovement: feedbackResponse.areasForImprovement,
-        processingProvider: feedbackResponse.provider,
-        processingTimeMs: feedbackResponse.response_time_ms,
-        processingCost: feedbackResponse.cost_usd,
-        confidenceLevel: feedbackResponse.confidence,
-      }).returning();
+      const [feedback] = await db
+        .insert(pronunciationFeedback)
+        .values({
+          audioRecordingId,
+          userId,
+          feedbackType: "PRONUNCIATION",
+          overallScore: feedbackResponse.overallScore,
+          detailedScores: feedbackResponse.detailedScores,
+          phoneticAccuracy: feedbackResponse.phoneticAccuracy,
+          wordLevelFeedback: feedbackResponse.wordLevelFeedback,
+          suggestions: feedbackResponse.suggestions,
+          strengths: feedbackResponse.strengths,
+          areasForImprovement: feedbackResponse.areasForImprovement,
+          processingProvider: feedbackResponse.provider,
+          processingTimeMs: feedbackResponse.response_time_ms,
+          processingCost: feedbackResponse.cost_usd,
+          confidenceLevel: feedbackResponse.confidence,
+        })
+        .returning();
 
       return feedback;
-
     } catch (error) {
       console.error("Pronunciation feedback generation failed:", error);
       // Return basic feedback if AI analysis fails
-      const [feedback] = await db.insert(pronunciationFeedback).values({
-        audioRecordingId,
-        userId,
-        feedbackType: "PRONUNCIATION",
-        overallScore: 70, // Default score
-        detailedScores: {},
-        suggestions: ["Practice speaking more clearly"],
-        strengths: [],
-        areasForImprovement: ["Clarity", "Pace"],
-        processingProvider: "fallback",
-        confidenceLevel: 0.5,
-      }).returning();
+      const [feedback] = await db
+        .insert(pronunciationFeedback)
+        .values({
+          audioRecordingId,
+          userId,
+          feedbackType: "PRONUNCIATION",
+          overallScore: 70, // Default score
+          detailedScores: {},
+          suggestions: ["Practice speaking more clearly"],
+          strengths: [],
+          areasForImprovement: ["Clarity", "Pace"],
+          processingProvider: "fallback",
+          confidenceLevel: 0.5,
+        })
+        .returning();
 
       return feedback;
     }
@@ -695,16 +714,18 @@ export class AudioProcessingService {
       .from(audioRecordings)
       .leftJoin(
         audioProcessingResults,
-        eq(audioProcessingResults.audioRecordingId, audioRecordings.id)
+        eq(audioProcessingResults.audioRecordingId, audioRecordings.id),
       )
       .leftJoin(
         pronunciationFeedback,
-        eq(pronunciationFeedback.audioRecordingId, audioRecordings.id)
+        eq(pronunciationFeedback.audioRecordingId, audioRecordings.id),
       )
-      .where(and(
-        eq(audioRecordings.id, audioRecordingId),
-        eq(audioRecordings.userId, userId)
-      ))
+      .where(
+        and(
+          eq(audioRecordings.id, audioRecordingId),
+          eq(audioRecordings.userId, userId),
+        ),
+      )
       .limit(1);
 
     if (!result[0]) {
@@ -714,7 +735,9 @@ export class AudioProcessingService {
     // Get audio URL from MinIO
     let audioUrl = null;
     if (result[0].recording.filePath) {
-      audioUrl = await this.minioService.getFileUrl(result[0].recording.filePath);
+      audioUrl = await this.minioService.getFileUrl(
+        result[0].recording.filePath,
+      );
     }
 
     return {
@@ -744,11 +767,11 @@ export class AudioProcessingService {
       .from(audioRecordings)
       .leftJoin(
         audioProcessingResults,
-        eq(audioProcessingResults.audioRecordingId, audioRecordings.id)
+        eq(audioProcessingResults.audioRecordingId, audioRecordings.id),
       )
       .leftJoin(
         pronunciationFeedback,
-        eq(pronunciationFeedback.audioRecordingId, audioRecordings.id)
+        eq(pronunciationFeedback.audioRecordingId, audioRecordings.id),
       )
       .where(eq(audioRecordings.userId, userId))
       .orderBy(desc(audioRecordings.createdAt))
@@ -756,17 +779,23 @@ export class AudioProcessingService {
 
     // Analyze patterns
     const totalRecordings = recentRecordings.length;
-    const averageConfidence = recentRecordings.reduce(
-      (sum, r) => sum + (r.processing?.confidenceScore || 0), 0
-    ) / totalRecordings;
+    const averageConfidence =
+      recentRecordings.reduce(
+        (sum, r) => sum + (r.processing?.confidenceScore || 0),
+        0,
+      ) / totalRecordings;
 
-    const averageScore = recentRecordings.reduce(
-      (sum, r) => sum + (r.feedback?.overallScore || 0), 0
-    ) / totalRecordings;
+    const averageScore =
+      recentRecordings.reduce(
+        (sum, r) => sum + (r.feedback?.overallScore || 0),
+        0,
+      ) / totalRecordings;
 
-    const averageDuration = recentRecordings.reduce(
-      (sum, r) => sum + (r.recording.durationSeconds || 0), 0
-    ) / totalRecordings;
+    const averageDuration =
+      recentRecordings.reduce(
+        (sum, r) => sum + (r.recording.durationSeconds || 0),
+        0,
+      ) / totalRecordings;
 
     // Identify common issues
     const commonIssues = this.identifyCommonIssues(recentRecordings);
@@ -786,7 +815,7 @@ export class AudioProcessingService {
   }
 
   private base64ToBlob(base64: string, mimeType: string): Blob {
-    const byteCharacters = atob(base64.split(',')[1]);
+    const byteCharacters = atob(base64.split(",")[1]);
     const byteNumbers = new Array(byteCharacters.length);
     for (let i = 0; i < byteCharacters.length; i++) {
       byteNumbers[i] = byteCharacters.charCodeAt(i);
@@ -813,19 +842,23 @@ export class AudioProcessingService {
       .map(([issue]) => issue);
   }
 
-  private calculateImprovementTrend(recordings: any[]): "improving" | "declining" | "stable" {
+  private calculateImprovementTrend(
+    recordings: any[],
+  ): "improving" | "declining" | "stable" {
     if (recordings.length < 5) return "stable";
 
     const recent = recordings.slice(0, 5);
     const older = recordings.slice(5, 10);
 
-    const recentAvg = recent.reduce(
-      (sum, r) => sum + (r.feedback?.overallScore || 0), 0
-    ) / recent.length;
+    const recentAvg =
+      recent.reduce((sum, r) => sum + (r.feedback?.overallScore || 0), 0) /
+      recent.length;
 
-    const olderAvg = older.length > 0
-      ? older.reduce((sum, r) => sum + (r.feedback?.overallScore || 0), 0) / older.length
-      : recentAvg;
+    const olderAvg =
+      older.length > 0
+        ? older.reduce((sum, r) => sum + (r.feedback?.overallScore || 0), 0) /
+          older.length
+        : recentAvg;
 
     if (recentAvg > olderAvg + 5) return "improving";
     if (recentAvg < olderAvg - 5) return "declining";
@@ -835,6 +868,7 @@ export class AudioProcessingService {
 ```
 
 #### 2.2 AI Integration for Audio Processing
+
 ```typescript
 // apps/api/src/services/ai-gateway-client.ts
 export class AIGatewayClient {
@@ -933,6 +967,7 @@ export class AIGatewayClient {
 ### Step 3: Audio Processing tRPC Router
 
 #### 3.1 Audio Processing API Endpoints
+
 ```typescript
 // apps/api/src/router/audio.ts
 import { router, protectedProcedure } from "./trpc";
@@ -943,16 +978,18 @@ import { AudioProcessingService } from "../services/audio-processing-service";
 export const audioRouter = router({
   // Process audio recording
   processRecording: protectedProcedure
-    .input(z.object({
-      audioRecordingId: z.string().uuid(),
-      audioData: z.string(), // Base64 encoded audio
-    }))
+    .input(
+      z.object({
+        audioRecordingId: z.string().uuid(),
+        audioData: z.string(), // Base64 encoded audio
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       try {
         const audioService = new AudioProcessingService();
         const result = await audioService.processAudio(
           input.audioRecordingId,
-          input.audioData
+          input.audioData,
         );
 
         return result;
@@ -972,7 +1009,7 @@ export const audioRouter = router({
       const audioService = new AudioProcessingService();
       const result = await audioService.getAudioWithFeedback(
         input.audioRecordingId,
-        ctx.user.id
+        ctx.user.id,
       );
 
       if (!result) {
@@ -987,9 +1024,11 @@ export const audioRouter = router({
 
   // Analyze speech patterns
   analyzeSpeechPatterns: protectedProcedure
-    .input(z.object({
-      limit: z.number().min(10).max(100).default(50),
-    }))
+    .input(
+      z.object({
+        limit: z.number().min(10).max(100).default(50),
+      }),
+    )
     .query(async ({ input, ctx }) => {
       const audioService = new AudioProcessingService();
       return await audioService.analyzeSpeechPatterns(ctx.user.id, input.limit);
@@ -997,9 +1036,11 @@ export const audioRouter = router({
 
   // Get audio statistics
   getAudioStats: protectedProcedure
-    .input(z.object({
-      period: z.enum(["day", "week", "month"]).default("week"),
-    }))
+    .input(
+      z.object({
+        period: z.enum(["day", "week", "month"]).default("week"),
+      }),
+    )
     .query(async ({ input, ctx }) => {
       // Implementation for audio statistics
       return {
@@ -1015,6 +1056,7 @@ export const audioRouter = router({
 ## Testing Strategy
 
 ### Audio Processing Tests
+
 ```typescript
 // apps/api/src/__tests__/audio-processing.test.ts
 import { describe, it, expect, beforeEach } from "vitest";
@@ -1031,7 +1073,10 @@ describe("Audio Processing", () => {
     // Mock audio data
     const mockAudioData = "data:audio/webm;base64,mock-base64-data";
 
-    const result = await audioService.processAudio("test-recording-id", mockAudioData);
+    const result = await audioService.processAudio(
+      "test-recording-id",
+      mockAudioData,
+    );
 
     expect(result.success).toBe(true);
     expect(result.transcription).toBeDefined();
@@ -1040,17 +1085,23 @@ describe("Audio Processing", () => {
   });
 
   it("should analyze speech patterns correctly", async () => {
-    const patterns = await audioService.analyzeSpeechPatterns("test-user-id", 10);
+    const patterns = await audioService.analyzeSpeechPatterns(
+      "test-user-id",
+      10,
+    );
 
     expect(patterns).toHaveProperty("totalRecordings");
     expect(patterns).toHaveProperty("averageScore");
     expect(patterns).toHaveProperty("improvementTrend");
-    expect(["improving", "declining", "stable"]).toContain(patterns.improvementTrend);
+    expect(["improving", "declining", "stable"]).toContain(
+      patterns.improvementTrend,
+    );
   });
 });
 ```
 
 ### Frontend Audio Tests
+
 ```bash
 # Test audio recording functionality
 # Note: These tests need to be run in a browser environment
@@ -1067,16 +1118,19 @@ curl -X POST http://localhost:4000/api/audio/process-recording \
 ## Estimated Timeline: 1 Week
 
 ### Day 1-2: Frontend Audio Components
+
 - Build audio recorder component
 - Create audio player with controls
 - Add waveform visualization
 
 ### Day 3-4: Backend Audio Processing
+
 - Implement audio processing service
 - Add STT/TTS integration
 - Build pronunciation feedback system
 
 ### Day 5: Integration and Testing
+
 - Connect frontend and backend
 - Test audio pipeline end-to-end
 - Optimize performance and quality

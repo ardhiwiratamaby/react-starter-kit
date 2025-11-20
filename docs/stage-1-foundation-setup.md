@@ -15,6 +15,7 @@ This stage focuses on establishing the complete Docker-based development environ
 ## Technical Requirements
 
 ### Core Services to Containerize
+
 1. **Frontend** - React app (apps/app) with development server
 2. **Backend API** - tRPC/Hono server (apps/api)
 3. **Database** - PostgreSQL with persistent storage
@@ -23,6 +24,7 @@ This stage focuses on establishing the complete Docker-based development environ
 6. **Email Service** - SMTP or Resend integration
 
 ### Development Tools
+
 - Bun runtime for local development
 - Hot reload for all services
 - Volume mounts for live code changes
@@ -33,6 +35,7 @@ This stage focuses on establishing the complete Docker-based development environ
 ### Step 1: Repository Setup
 
 #### 1.1 Fork React Starter Kit
+
 ```bash
 # Clone the starter kit
 git clone https://github.com/kriasoft/react-starter-kit.git pronunciation-assistant
@@ -44,6 +47,7 @@ cd pronunciation-assistant
 ```
 
 #### 1.2 Project Structure Adaptation
+
 ```
 pronunciation-assistant/
 ├── apps/
@@ -65,6 +69,7 @@ pronunciation-assistant/
 ### Step 2: Docker Configuration
 
 #### 2.1 Frontend Dockerfile
+
 ```dockerfile
 # apps/app/Dockerfile
 FROM node:18-alpine AS base
@@ -99,6 +104,7 @@ CMD ["nginx", "-g", "daemon off;"]
 ```
 
 #### 2.2 Backend API Dockerfile
+
 ```dockerfile
 # apps/api/Dockerfile
 FROM oven/bun:1-alpine AS base
@@ -120,6 +126,7 @@ CMD ["bun", "run", "start"]
 ```
 
 #### 2.3 AI Gateway Dockerfile
+
 ```dockerfile
 # apps/ai-gateway/Dockerfile
 FROM python:3.11-slim
@@ -144,9 +151,10 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
 ### Step 3: Docker Compose Configuration
 
 #### 3.1 Development Environment
+
 ```yaml
 # docker-compose.dev.yml
-version: '3.8'
+version: "3.8"
 
 services:
   # Frontend Development Server
@@ -274,9 +282,10 @@ networks:
 ```
 
 #### 3.2 Production Environment
+
 ```yaml
 # docker-compose.prod.yml
-version: '3.8'
+version: "3.8"
 
 services:
   # Nginx Reverse Proxy
@@ -383,6 +392,7 @@ networks:
 ### Step 4: Environment Configuration
 
 #### 4.1 Environment Variables Template
+
 ```bash
 # .env.example
 # Database
@@ -422,6 +432,7 @@ SMTP_PASS=your-app-password
 ### Step 5: Development Scripts
 
 #### 5.1 Package.json Scripts
+
 ```json
 {
   "scripts": {
@@ -442,6 +453,7 @@ SMTP_PASS=your-app-password
 ## Database Schema
 
 ### Initial Tables (Stage 1)
+
 ```sql
 -- Basic user schema (will be extended in Stage 2)
 CREATE TABLE users (
@@ -465,24 +477,26 @@ CREATE TABLE sessions (
 ## API Endpoints
 
 ### Initial Health Checks
+
 ```typescript
 // apps/api/src/routes/health.ts
 export const healthRouter = router({
   check: procedure.query(() => ({
-    status: 'ok',
+    status: "ok",
     timestamp: new Date().toISOString(),
     services: {
-      database: 'connected', // Will check actual connection
-      redis: 'connected',
-      minio: 'connected'
-    }
-  }))
-})
+      database: "connected", // Will check actual connection
+      redis: "connected",
+      minio: "connected",
+    },
+  })),
+});
 ```
 
 ## UI Components
 
 ### Basic Layout Structure
+
 ```typescript
 // apps/app/src/components/layout/Layout.tsx
 import React from 'react';
@@ -507,6 +521,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 ## Integration Points
 
 ### Prerequisites for Next Stage
+
 - Database connection established and tested
 - Basic authentication endpoints accessible
 - File storage system operational
@@ -515,6 +530,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 ## Testing Strategy
 
 ### Health Check Tests
+
 ```bash
 # Test all services are running
 curl http://localhost:3000  # Frontend
@@ -523,6 +539,7 @@ curl http://localhost:8001/health  # AI Gateway
 ```
 
 ### Database Connection Test
+
 ```bash
 # Verify database connectivity
 docker-compose -f docker-compose.dev.yml exec api bun run db:check
@@ -531,11 +548,13 @@ docker-compose -f docker-compose.dev.yml exec api bun run db:check
 ## Estimated Timeline: 2 Weeks
 
 ### Week 1: Foundation
+
 - Day 1-2: Repository setup and structure adaptation
 - Day 3-4: Dockerfile creation and testing
 - Day 5: Basic Docker Compose configuration
 
 ### Week 2: Integration and Testing
+
 - Day 1-2: Service networking and environment setup
 - Day 3-4: Development scripts and tooling
 - Day 5: End-to-end testing and documentation
@@ -554,12 +573,14 @@ docker-compose -f docker-compose.dev.yml exec api bun run db:check
 ## Troubleshooting
 
 ### Common Issues
+
 1. **Port conflicts** - Ensure ports 3000, 4000, 5432, 6379, 9000, 9001 are available
 2. **Permission issues** - Check Docker permissions and volume mounts
 3. **Network issues** - Verify all containers are on the same Docker network
 4. **Environment variables** - Ensure all required variables are set
 
 ### Debug Commands
+
 ```bash
 # View logs for all services
 npm run logs

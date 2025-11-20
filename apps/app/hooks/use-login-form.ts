@@ -19,9 +19,11 @@ export function useLoginForm({
 }: UseLoginFormOptions = {}) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showOtpInput, setShowOtpInput] = useState(false);
+  const [authMode, setAuthMode] = useState<"otp" | "password">("password"); // Default to password for dev
 
   // Combine internal and external loading states
   const isDisabled = isLoading || isExternallyLoading;
@@ -77,6 +79,33 @@ export function useLoginForm({
     }
   };
 
+  const signInWithPassword = async (e?: FormEvent) => {
+    e?.preventDefault();
+    if (!email || !password) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Sign in with email and password
+      const result = await auth.signIn.email({
+        email,
+        password,
+      });
+
+      if (result.data) {
+        await handleSuccess();
+      } else if (result.error) {
+        setError(result.error.message || "Failed to sign in with password");
+      }
+    } catch (err) {
+      console.error("Password sign-in error:", err);
+      setError("Failed to sign in with email and password");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const resetOtpFlow = () => {
     setShowOtpInput(false);
     setError(null);
@@ -85,6 +114,8 @@ export function useLoginForm({
   return {
     // State
     email,
+    password,
+    authMode,
     isLoading,
     isDisabled,
     error,
@@ -92,6 +123,8 @@ export function useLoginForm({
 
     // Setters
     setEmail,
+    setPassword,
+    setAuthMode,
     setIsLoading,
     setError,
     setShowOtpInput,
@@ -101,6 +134,7 @@ export function useLoginForm({
     handleError,
     clearError,
     sendOtp,
+    signInWithPassword,
     resetOtpFlow,
   };
 }

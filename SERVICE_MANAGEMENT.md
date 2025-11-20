@@ -31,7 +31,7 @@ chmod +x manage.sh
 ### Development Services
 
 - **Astro Web** (Port 4321) - Static site and documentation
-- **Vite App** (Port 5174) - Main React frontend application
+- **Vite App** (Port 5173) - Main React frontend application
 - **tRPC API** (Port 4000) - Backend API service
 
 ### AI Services
@@ -70,7 +70,7 @@ chmod +x manage.sh
 
 ### Managed Ports
 
-The script monitors and manages these ports: `3000 4000 4321 5001 5174 8000 8001 9000 9001 5050 5432 6379`
+The script monitors and manages these ports: `3000 4000 4321 5001 5173 5174 8000 8001 9000 9001 5050 5432 6379`
 
 ### Aggressive Cleanup
 
@@ -137,7 +137,7 @@ The `stop` command performs **comprehensive port cleanup**:
 
 After starting services, you can access them at:
 
-- **Main App**: http://localhost:5174/ (React application)
+- **Main App**: http://localhost:5173/ (React application)
 - **Web Site**: http://localhost:4321/ (Astro site)
 - **API Docs**: http://localhost:4000/ (tRPC API)
 - **AI API Docs**: http://localhost:8001/docs (FastAPI Swagger)

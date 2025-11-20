@@ -126,5 +126,8 @@
     "*": [
       "bunx prettier --check --ignore-unknown"
     ]
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3"
   }
 }

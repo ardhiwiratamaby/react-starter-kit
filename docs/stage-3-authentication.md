@@ -18,6 +18,7 @@ This stage adapts the Better Auth system from the React Starter Kit to work with
 ## Technical Requirements
 
 ### Authentication Features
+
 - Email/password authentication
 - OAuth provider integration (Google, GitHub)
 - Email verification for new accounts
@@ -28,6 +29,7 @@ This stage adapts the Better Auth system from the React Starter Kit to work with
 - Role-based access control (USER/ADMIN)
 
 ### Security Requirements
+
 - Secure session storage
 - CSRF protection
 - Rate limiting on auth endpoints
@@ -40,6 +42,7 @@ This stage adapts the Better Auth system from the React Starter Kit to work with
 ### Step 1: Better Auth Configuration
 
 #### 1.1 Authentication Setup
+
 ```typescript
 // apps/api/src/lib/auth.ts
 import { betterAuth } from "better-auth";
@@ -72,8 +75,8 @@ export const auth = betterAuth({
         userAgent: "userAgent",
         createdAt: "createdAt",
         lastAccessed: "lastAccessed",
-      }
-    }
+      },
+    },
   }),
 
   emailAndPassword: {
@@ -103,7 +106,7 @@ export const auth = betterAuth({
     cookieCache: {
       enabled: true,
       maxAge: 5 * 60, // 5 minutes
-    }
+    },
   },
 
   emailVerification: {
@@ -142,20 +145,15 @@ export const auth = betterAuth({
     crossSubDomainCookies: {
       enabled: false,
     },
-    trustedOrigins: [
-      "http://localhost:3000",
-      "https://yourdomain.com",
-    ],
+    trustedOrigins: ["http://localhost:3000", "https://yourdomain.com"],
   },
 
-  plugins: [
-    admin(),
-    openAPI(),
-  ],
+  plugins: [admin(), openAPI()],
 });
 ```
 
 #### 1.2 Docker Environment Configuration
+
 ```typescript
 // apps/api/src/lib/auth-config.ts
 import { auth } from "./auth";
@@ -163,9 +161,7 @@ import { auth } from "./auth";
 export const authConfig = {
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:4000",
   secret: process.env.BETTER_AUTH_SECRET!,
-  trustedOrigins: [
-    process.env.FRONTEND_URL || "http://localhost:3000",
-  ],
+  trustedOrigins: [process.env.FRONTEND_URL || "http://localhost:3000"],
   cookies: {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -187,6 +183,7 @@ export const authConfig = {
 ### Step 2: tRPC Authentication Integration
 
 #### 2.1 Auth Middleware
+
 ```typescript
 // apps/api/src/middleware/auth.ts
 import { auth } from "../lib/auth";
@@ -237,6 +234,7 @@ export const optionalAuth = async (ctx: Context) => {
 ```
 
 #### 2.2 Authenticated Procedures
+
 ```typescript
 // apps/api/src/router/auth.ts
 import { router, publicProcedure, protectedProcedure } from "./trpc";
@@ -256,11 +254,13 @@ export const authRouter = router({
 
   // Sign up with email/password
   signUp: publicProcedure
-    .input(z.object({
-      email: z.string().email(),
-      password: z.string().min(8),
-      name: z.string().min(2),
-    }))
+    .input(
+      z.object({
+        email: z.string().email(),
+        password: z.string().min(8),
+        name: z.string().min(2),
+      }),
+    )
     .mutation(async ({ input }) => {
       try {
         const user = await auth.api.signUpEmail({
@@ -277,10 +277,12 @@ export const authRouter = router({
 
   // Sign in with email/password
   signIn: publicProcedure
-    .input(z.object({
-      email: z.string().email(),
-      password: z.string(),
-    }))
+    .input(
+      z.object({
+        email: z.string().email(),
+        password: z.string(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       try {
         const session = await auth.api.signInEmail({
@@ -307,11 +309,13 @@ export const authRouter = router({
   // Admin only: Get all users
   getAllUsers: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      page: z.number().min(1).default(1),
-      limit: z.number().min(1).max(100).default(20),
-      search: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).max(100).default(20),
+        search: z.string().optional(),
+      }),
+    )
     .query(async ({ input }) => {
       // Implementation for getting paginated users
       return {
@@ -325,10 +329,12 @@ export const authRouter = router({
   // Admin only: Update user role
   updateUserRole: protectedProcedure
     .use(enforceAdmin)
-    .input(z.object({
-      userId: z.string().uuid(),
-      role: z.enum(["USER", "ADMIN"]),
-    }))
+    .input(
+      z.object({
+        userId: z.string().uuid(),
+        role: z.enum(["USER", "ADMIN"]),
+      }),
+    )
     .mutation(async ({ input }) => {
       // Implementation for updating user role
       return { success: true };
@@ -339,6 +345,7 @@ export const authRouter = router({
 ### Step 3: Email Service Integration
 
 #### 3.1 Email Configuration
+
 ```typescript
 // apps/api/src/lib/email.ts
 import React from "react";
@@ -393,6 +400,7 @@ export const sendEmail = async ({ to, subject, template, props }: EmailProps) =>
 ```
 
 #### 3.2 Email Templates
+
 ```typescript
 // apps/api/src/email-templates/index.tsx
 import React from "react";
@@ -494,6 +502,7 @@ export const WelcomeEmail: React.FC<{
 ### Step 4: Frontend Authentication Integration
 
 #### 4.1 Auth Context Setup
+
 ```typescript
 // apps/app/src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useState } from "react";
@@ -575,6 +584,7 @@ export const useAuth = () => {
 ```
 
 #### 4.2 Auth Components
+
 ```typescript
 // apps/app/src/components/auth/LoginForm.tsx
 import React, { useState } from "react";
@@ -660,6 +670,7 @@ export const LoginForm: React.FC = () => {
 ### Step 5: Protected Routes and Admin Access
 
 #### 5.1 Route Protection
+
 ```typescript
 // apps/app/src/components/auth/ProtectedRoute.tsx
 import React from "react";
@@ -713,6 +724,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 ```
 
 #### 5.2 Admin Dashboard Integration
+
 ```typescript
 // apps/app/src/pages/admin/Dashboard.tsx
 import React from "react";
@@ -756,6 +768,7 @@ export const AdminDashboard: React.FC = () => {
 ## Testing Strategy
 
 ### Authentication Tests
+
 ```typescript
 // apps/api/src/__tests__/auth.test.ts
 import { describe, it, expect, beforeEach } from "vitest";
@@ -802,17 +815,20 @@ describe("Authentication", () => {
   });
 
   it("should reject invalid credentials", async () => {
-    await expect(auth.api.signInEmail({
-      body: {
-        email: "test@example.com",
-        password: "wrongpassword",
-      },
-    })).rejects.toThrow();
+    await expect(
+      auth.api.signInEmail({
+        body: {
+          email: "test@example.com",
+          password: "wrongpassword",
+        },
+      }),
+    ).rejects.toThrow();
   });
 });
 ```
 
 ### Integration Tests
+
 ```bash
 # Test authentication flow
 docker-compose -f docker-compose.dev.yml exec api bun run test:auth
@@ -827,6 +843,7 @@ docker-compose -f docker-compose.dev.yml exec api bun run test:sessions
 ## Security Considerations
 
 ### Rate Limiting
+
 ```typescript
 // apps/api/src/middleware/rateLimit.ts
 import rateLimit from "express-rate-limit";
@@ -849,9 +866,12 @@ export const passwordRateLimit = rateLimit({
 ```
 
 ### Password Strength Validation
+
 ```typescript
 // apps/api/src/lib/password-validation.ts
-export const validatePassword = (password: string): { valid: boolean; errors: string[] } => {
+export const validatePassword = (
+  password: string,
+): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
   if (password.length < 8) {
@@ -888,16 +908,19 @@ export const validatePassword = (password: string): { valid: boolean; errors: st
 ## Estimated Timeline: 1 Week
 
 ### Day 1-2: Basic Authentication Setup
+
 - Configure Better Auth for Docker environment
 - Set up email/password authentication
 - Integrate with tRPC router
 
 ### Day 3-4: OAuth and Email System
+
 - Implement Google and GitHub OAuth
 - Set up email verification system
 - Create password reset functionality
 
 ### Day 5: Advanced Features and Testing
+
 - Implement role-based access control
 - Set up admin authentication
 - Test all authentication flows
@@ -921,6 +944,7 @@ export const validatePassword = (password: string): { valid: boolean; errors: st
 ## Troubleshooting
 
 ### Common Issues
+
 1. **Docker networking** - Ensure auth service can reach other containers
 2. **Environment variables** - Check all required auth env vars are set
 3. **Email service** - Verify Resend API key and configuration
@@ -928,6 +952,7 @@ export const validatePassword = (password: string): { valid: boolean; errors: st
 5. **CORS issues** - Configure trusted origins properly
 
 ### Debug Commands
+
 ```bash
 # Check auth service logs
 docker-compose -f docker-compose.dev.yml logs -f api

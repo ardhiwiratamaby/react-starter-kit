@@ -3,7 +3,8 @@
 
 import { useLoginForm } from "@/hooks/use-login-form";
 import { Button, Card, CardContent, Input, cn } from "@repo/ui";
-import { Mail } from "lucide-react";
+import { Eye, EyeOff, Key, Mail } from "lucide-react";
+import { useState } from "react";
 import type { ComponentProps } from "react";
 import { OtpVerification } from "./otp-verification";
 import { PasskeyLogin } from "./passkey-login";
@@ -20,15 +21,22 @@ function AuthFormContent({
   className,
   isExternallyLoading,
 }: AuthFormContentProps) {
+  const [showPassword, setShowPassword] = useState(false);
+
   const {
     email,
+    password,
+    authMode,
     isDisabled,
     error,
     showOtpInput,
     setEmail,
+    setPassword,
+    setAuthMode,
     handleSuccess,
     handleError,
     sendOtp,
+    signInWithPassword,
     resetOtpFlow,
   } = useLoginForm({
     onSuccess,
@@ -68,9 +76,12 @@ function AuthFormContent({
         </span>
       </div>
 
-      {/* Email Form - OTP authentication flow */}
+      {/* Email Form - Password or OTP authentication flow */}
       {!showOtpInput ? (
-        <form onSubmit={sendOtp} className="grid gap-3">
+        <form
+          onSubmit={authMode === "password" ? signInWithPassword : sendOtp}
+          className="grid gap-3"
+        >
           <Input
             type="email"
             placeholder="your@email.com"
@@ -80,14 +91,79 @@ function AuthFormContent({
             autoComplete="email webauthn"
             required
           />
+
+          {/* Password field - only shown in password mode */}
+          {authMode === "password" && (
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isDisabled}
+                autoComplete="current-password"
+                required
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={isDisabled}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          )}
+
+          {/* Auth mode toggle */}
+          <div className="flex items-center gap-2 text-sm">
+            <Button
+              type="button"
+              variant={authMode === "password" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setAuthMode("password")}
+              disabled={isDisabled}
+              className="flex-1"
+            >
+              <Key className="mr-2 h-4 w-4" />
+              Password
+            </Button>
+            <Button
+              type="button"
+              variant={authMode === "otp" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setAuthMode("otp")}
+              disabled={isDisabled}
+              className="flex-1"
+            >
+              <Mail className="mr-2 h-4 w-4" />
+              Email Code
+            </Button>
+          </div>
+
+          {/* Submit button */}
           <Button
             type="submit"
             variant="secondary"
             className="w-full"
-            disabled={isDisabled || !email}
+            disabled={
+              isDisabled || !email || (authMode === "password" && !password)
+            }
           >
-            <Mail className="mr-2 h-4 w-4" />
-            Continue with email
+            {authMode === "password" ? (
+              <Key className="mr-2 h-4 w-4" />
+            ) : (
+              <Mail className="mr-2 h-4 w-4" />
+            )}
+            {authMode === "password"
+              ? "Sign in with password"
+              : "Send email code"}
           </Button>
         </form>
       ) : (

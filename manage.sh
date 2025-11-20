@@ -23,7 +23,7 @@ LOG_DIR="$PROJECT_ROOT/.logs"
 mkdir -p "$PID_DIR" "$LOG_DIR"
 
 # Managed ports
-MANAGED_PORTS=(3000 4000 4321 5001 5174 8000 8001 9000 9001 5050 5432 6379)
+MANAGED_PORTS=(3000 4000 4321 5001 5173 5174 8000 8001 9000 9001 5050 5432 6379)
 
 # Service configurations
 declare -A SERVICES
@@ -31,7 +31,7 @@ SERVICES[postgres]="5432 PostgreSQL"
 SERVICES[redis]="6379 Redis"
 SERVICES[minio]="9000,9001 MinIO"
 SERVICES[web]="4321 Astro Web"
-SERVICES[app]="5174 Vite App"
+SERVICES[app]="5173 Vite App"
 SERVICES[api]="4000 tRPC API"
 SERVICES[ai-gateway]="8001 AI Gateway"
 SERVICES[docling]="5001 Docling"
@@ -177,8 +177,9 @@ start_docker_services() {
     local all_running=true
     for service in postgres redis minio; do
         if is_docker_running $service; then
-            local port=${SERVICES[$service]%% *}
-            log_success "Docker $service is running on port $port"
+            # Handle services with multiple ports (like MinIO)
+            local port_info="${SERVICES[$service]}"
+            log_success "Docker $service is running on ports $port_info"
         else
             log_error "Docker $service failed to start"
             all_running=false
@@ -187,6 +188,8 @@ start_docker_services() {
 
     if $all_running; then
         log_success "All Docker services started successfully"
+        echo
+        show_docker_service_urls
     else
         log_error "Some Docker services failed to start"
         return 1
@@ -223,7 +226,7 @@ start_dev_servers() {
     fi
 
     # Check if ports are available
-    for service in "web:4321" "app:5174" "api:4000"; do
+    for service in "web:4321" "app:5173" "app:5174" "api:4000"; do
         local service_name=${service%:*}
         local port=${service#*:}
         if is_port_in_use $port; then
@@ -252,16 +255,27 @@ start_dev_servers() {
     sleep 10
 
     local started_count=0
-    for service in "web:4321" "app:5174"; do
-        local service_name=${service%:*}
-        local port=${service#*:}
+    # Check web service
+    if is_port_in_use 4321; then
+        log_success "web started on port 4321"
+        ((started_count++))
+    else
+        log_warning "web may not have started properly"
+    fi
+
+    # Check app service on both possible ports
+    local app_started=false
+    for port in 5173 5174; do
         if is_port_in_use $port; then
-            log_success "$service_name started on port $port"
+            log_success "app started on port $port"
             ((started_count++))
-        else
-            log_warning "$service_name may not have started properly"
+            app_started=true
+            break
         fi
     done
+    if ! $app_started; then
+        log_warning "app may not have started properly"
+    fi
 
     if [[ $started_count -gt 0 ]]; then
         log_success "$started_count development services started"
@@ -323,6 +337,51 @@ start_external_services() {
     fi
 }
 
+# Display Docker service URLs
+show_docker_service_urls() {
+    log_header "Docker Service URLs"
+
+    echo -e "\n${CYAN}Infrastructure Services:${NC}"
+
+    # PostgreSQL
+    if is_docker_running postgres; then
+        echo -e "  ${GREEN}●${NC} PostgreSQL - Port: 5432"
+        echo -e "     Connection: postgresql://localhost:5432/pronunciation_assistant"
+        echo -e "     Management: Use DBeaver or psql to connect"
+    fi
+
+    # Redis
+    if is_docker_running redis; then
+        echo -e "  ${GREEN}●${NC} Redis - Port: 6379"
+        echo -e "     Connection: redis://localhost:6379"
+        echo -e "     Management: Use Redis CLI or GUI tools"
+    fi
+
+    # MinIO
+    if is_docker_running minio; then
+        echo -e "  ${GREEN}●${NC} MinIO - Ports: 9000 (API), 9001 (Console)"
+        echo -e "     API: http://localhost:9000"
+        echo -e "     Console: http://localhost:9001"
+        echo -e "     Default credentials: minioadmin/minioadmin (check docker-compose.dev.yml)"
+    fi
+
+    echo -e "\n${CYAN}Quick Access:${NC}"
+    echo -e "  🗄️  ${BLUE}MinIO Console:${NC} http://localhost:9001"
+    echo -e "  🔴 ${BLUE}Redis:${NC} redis-cli -h localhost -p 6379"
+    echo -e "  🐘 ${BLUE}PostgreSQL:${NC} psql -h localhost -p 5432 -U postgres -d pronunciation_assistant"
+    echo
+
+    # Show Docker container status (simplified format)
+    echo -e "${CYAN}Docker Container Status:${NC}"
+    if command -v docker &> /dev/null; then
+        cd "$PROJECT_ROOT"
+        if [[ -f "docker-compose.dev.yml" ]]; then
+            echo
+            docker-compose -f docker-compose.dev.yml ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+        fi
+    fi
+}
+
 # Status checking
 show_status() {
     log_header "Service Status"
@@ -338,7 +397,8 @@ show_status() {
     done
 
     echo -e "\n${CYAN}Development Services:${NC}"
-    for service_pair in "web:4321" "app:5174" "api:4000"; do
+    # Check web and API services
+    for service_pair in "web:4321" "api:4000"; do
         local service_name=${service_pair%:*}
         local port=${service_pair#*:}
         if is_port_in_use $port; then
@@ -348,6 +408,22 @@ show_status() {
             echo -e "  ${RED}●${NC} $service_name (port $port) - Stopped"
         fi
     done
+
+    # Check app service on both possible ports
+    local app_running=false
+    local app_port=""
+    for port in 5173 5174; do
+        if is_port_in_use $port; then
+            app_running=true
+            app_port=$port
+            local process_info=$(lsof -i:$port -n -P 2>/dev/null | tail -n +2 | head -n1)
+            echo -e "  ${GREEN}●${NC} app (port $port) - Running ($process_info)"
+            break
+        fi
+    done
+    if ! $app_running; then
+        echo -e "  ${RED}●${NC} app (port 5173/5174) - Stopped"
+    fi
 
     echo -e "\n${CYAN}External AI Services:${NC}"
     if docker ps --format "table {{.Names}}" | grep -q "docling-serve"; then

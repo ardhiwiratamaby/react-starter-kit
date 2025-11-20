@@ -15,6 +15,7 @@ The platform is a full-featured multi-user application with secure authenticatio
 **Primary Goal:** To create a holistic, interactive, and adaptable platform for English language learners that is powerful, secure, and cost-effective.
 
 **Core Objectives:**
+
 - To provide a secure, multi-user environment with distinct User and Admin roles and personalized workspaces.
 - To standardize all document inputs into high-quality Markdown to serve as a clean, structured context for AI processing.
 - To implement an AI Service Gateway that allows for dynamic provider selection for all AI tasks: Text-to-Speech (TTS), Speech-to-Text (STT), and Language Model (LLM) script generation.
@@ -80,10 +81,11 @@ The system is a decoupled, microservices-oriented architecture designed for scal
 ### 4.4. AI Provider Management (Admin Dashboard)
 
 A centralized settings panel for administrators to select the active provider for each AI task:
+
 - **TTS Provider:** Self-Hosted, Google Cloud, Amazon Polly, etc.
 - **STT Provider:** Self-Hosted, Deepgram, AssemblyAI, etc. (Currently implemented with OpenAI Whisper)
 - **Script Generation (LLM) Provider:** Self-Hosted (vLLM), OpenAI, Qwen, etc.
-Secure, encrypted storage for all third-party API credentials.
+  Secure, encrypted storage for all third-party API credentials.
 
 ## 5. Key Workflow: Document-to-Conversation Script
 
@@ -99,6 +101,7 @@ Secure, encrypted storage for all third-party API credentials.
 ### 6.1. Public API (Frontend <-> Backend - GraphQL)
 
 **Queries:**
+
 - `me`: Get the current user's information.
 - `users`: Get a list of all users (Admin only).
 - `documents`: Get the current user's documents.
@@ -107,6 +110,7 @@ Secure, encrypted storage for all third-party API credentials.
 - `conversation(id: ID!)`: Get a specific conversation by ID.
 
 **Mutations:**
+
 - `signup(email: String!, password: String!, name: String!)`: Create a new user account.
 - `login(email: String!, password: String!)`: Authenticate a user.
 - `logout`: Log out the current user.
@@ -128,6 +132,7 @@ Secure, encrypted storage for all third-party API credentials.
 ## 7. Technology Stack
 
 ### Frontend
+
 - **Framework:** React
 - **State Management:** Apollo Client (GraphQL)
 - **UI Library:** Material UI
@@ -135,6 +140,7 @@ Secure, encrypted storage for all third-party API credentials.
 - **HTTP Client:** Axios
 
 ### Web Application Backend
+
 - **Framework:** Node.js with Express
 - **GraphQL Server:** Apollo Server
 - **Database Client:** Prisma Client
@@ -145,16 +151,19 @@ Secure, encrypted storage for all third-party API credentials.
 - **Document Processing:** mammoth (for DOCX), pdf-parse (for PDF)
 
 ### AI Service Gateway
+
 - **Framework:** Python with FastAPI
 - **HTTP Client:** httpx
 - **AI Client Libraries:** openai, google-cloud-texttospeech, google-cloud-speech, boto3
 - **Data Validation:** pydantic
 
 ### Database
+
 - **Database:** PostgreSQL
 - **ORM:** Prisma
 
 ### Containerization & Orchestration
+
 - **Container Runtime:** Docker
 - **Orchestration:** Docker Compose
 
@@ -171,7 +180,7 @@ model User {
   role      String    @default("USER")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  
+
   documents     Document[]
   conversations Conversation[]
 }
@@ -184,7 +193,7 @@ model Document {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   conversations Conversation[]
 }
 
@@ -204,16 +213,21 @@ model Conversation {
 ## 9. User Interface (UI) Overview
 
 ### 9.1. Login/Signup
+
 A secure authentication screen with form validation for email, password, and name.
 
 ### 9.2. Dashboard
+
 A central hub displaying user documents, recent conversations, and quick access to main features.
 
 ### 9.3. Document Upload
+
 A component allowing users to upload DOCX/PDF files or enter text manually, with options for script generation.
 
 ### 9.4. Conversation Practice
+
 The core practice interface featuring:
+
 - A script display area.
 - Role selection (Person A/B).
 - A "Hold to Speak" button with recording status.
@@ -221,7 +235,9 @@ The core practice interface featuring:
 - A text input alternative to voice recording.
 
 ### 9.5. Admin Panel
+
 An administrative interface with tabs for:
+
 - User Management (view, edit, delete users).
 - AI Provider Settings (configure and toggle providers).
 - System Status (health checks for services).
@@ -229,6 +245,7 @@ An administrative interface with tabs for:
 ## 10. Phased Development Roadmap
 
 ### Phase 1: Platform Foundation & Core MVP (5-6 months)
+
 - Multi-user authentication and RBAC.
 - Document upload and conversion (Mark-It-Down - simulated).
 - AI Service Gateway stub.
@@ -236,15 +253,18 @@ An administrative interface with tabs for:
 - GraphQL API for core data operations.
 
 ### Phase 2: Commercial Integration (2-3 months)
+
 - Integration of commercial AI providers (NVIDIA, Google, Amazon, OpenAI).
 - Admin configuration for AI providers.
 - Full implementation of the AI Gateway with provider abstraction.
 
 ### Phase 3: Feedback & Enhancement (2-3 months)
+
 - Pronunciation feedback UI (simulated).
 - User testing and iteration.
 
 ### Phase 4: Interactive Conversation (3-4 months)
+
 - Turn-based conversation practice implementation.
 - Audio recording and processing pipeline (frontend and backend).
 - Full integration with STT and TTS services.
@@ -253,10 +273,12 @@ An administrative interface with tabs for:
 ## 11. Local Development Setup
 
 ### Prerequisites
+
 - Docker
 - Docker Compose
 
 ### Steps
+
 1. Clone the repository.
 2. Create a `.env` file based on `.env.example` and add your API keys:
    ```bash

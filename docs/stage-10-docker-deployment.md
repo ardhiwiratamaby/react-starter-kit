@@ -18,6 +18,7 @@ This stage implements the complete production deployment configuration for the A
 ## Technical Requirements
 
 ### Production Infrastructure
+
 - Multi-stage Docker builds for optimization
 - Environment-specific configuration management
 - Load balancing and SSL termination
@@ -26,6 +27,7 @@ This stage implements the complete production deployment configuration for the A
 - Container orchestration and scaling
 
 ### Security & Compliance
+
 - SSL/TLS encryption everywhere
 - Security headers and CSP
 - Environment secrets management
@@ -34,6 +36,7 @@ This stage implements the complete production deployment configuration for the A
 - Security scanning and vulnerability management
 
 ### Monitoring & Operations
+
 - Application performance monitoring
 - Log aggregation and analysis
 - Health checks and alerting
@@ -46,9 +49,10 @@ This stage implements the complete production deployment configuration for the A
 ### Step 1: Production Docker Configuration
 
 #### 1.1 Production Docker Compose
+
 ```yaml
 # docker-compose.prod.yml
-version: '3.8'
+version: "3.8"
 
 services:
   # Nginx Reverse Proxy
@@ -285,12 +289,12 @@ services:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--storage.tsdb.retention.time=200h"
+      - "--web.enable-lifecycle"
     networks:
       - pron-assist-network
     restart: unless-stopped
@@ -384,6 +388,7 @@ networks:
 ```
 
 #### 1.2 Production Nginx Configuration
+
 ```nginx
 # nginx/nginx.conf
 user nginx;
@@ -581,6 +586,7 @@ server {
 ### Step 2: Production Dockerfiles
 
 #### 2.1 Optimized Frontend Dockerfile
+
 ```dockerfile
 # apps/app/Dockerfile
 # Multi-stage build for production optimization
@@ -618,6 +624,7 @@ CMD ["nginx", "-g", "daemon off;"]
 ```
 
 #### 2.2 Optimized Backend Dockerfile
+
 ```dockerfile
 # apps/api/Dockerfile
 FROM oven/bun:1-alpine AS base
@@ -657,6 +664,7 @@ CMD ["bun", "run", "start"]
 ```
 
 #### 2.3 Optimized AI Gateway Dockerfile
+
 ```dockerfile
 # apps/ai-gateway/Dockerfile
 FROM python:3.11-slim AS base
@@ -695,6 +703,7 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", 
 ### Step 3: Monitoring and Logging Configuration
 
 #### 3.1 Prometheus Configuration
+
 ```yaml
 # monitoring/prometheus.yml
 global:
@@ -708,47 +717,48 @@ alerting:
   alertmanagers:
     - static_configs:
         - targets:
-          - alertmanager:9093
+            - alertmanager:9093
 
 scrape_configs:
-  - job_name: 'prometheus'
+  - job_name: "prometheus"
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ["localhost:9090"]
 
-  - job_name: 'pron-assist-api'
+  - job_name: "pron-assist-api"
     static_configs:
-      - targets: ['api:4000']
-    metrics_path: '/metrics'
+      - targets: ["api:4000"]
+    metrics_path: "/metrics"
     scrape_interval: 30s
 
-  - job_name: 'pron-assist-ai-gateway'
+  - job_name: "pron-assist-ai-gateway"
     static_configs:
-      - targets: ['ai-gateway:8001']
-    metrics_path: '/metrics'
+      - targets: ["ai-gateway:8001"]
+    metrics_path: "/metrics"
     scrape_interval: 30s
 
-  - job_name: 'nginx'
+  - job_name: "nginx"
     static_configs:
-      - targets: ['nginx:9113']
+      - targets: ["nginx:9113"]
     scrape_interval: 30s
 
-  - job_name: 'postgres'
+  - job_name: "postgres"
     static_configs:
-      - targets: ['postgres-exporter:9187']
+      - targets: ["postgres-exporter:9187"]
     scrape_interval: 30s
 
-  - job_name: 'redis'
+  - job_name: "redis"
     static_configs:
-      - targets: ['redis-exporter:9121']
+      - targets: ["redis-exporter:9121"]
     scrape_interval: 30s
 
-  - job_name: 'node'
+  - job_name: "node"
     static_configs:
-      - targets: ['node-exporter:9100']
+      - targets: ["node-exporter:9100"]
     scrape_interval: 30s
 ```
 
 #### 3.2 Alert Rules
+
 ```yaml
 # monitoring/alert_rules.yml
 groups:
@@ -812,6 +822,7 @@ groups:
 ### Step 4: CI/CD Pipeline Configuration
 
 #### 4.1 GitHub Actions Workflow
+
 ```yaml
 # .github/workflows/deploy.yml
 name: Deploy to Production
@@ -960,6 +971,7 @@ jobs:
 ### Step 5: Backup and Recovery Scripts
 
 #### 5.1 Automated Backup Script
+
 ```bash
 #!/bin/bash
 # scripts/backup.sh
@@ -1017,6 +1029,7 @@ fi
 ```
 
 #### 5.2 Restore Script
+
 ```bash
 #!/bin/bash
 # scripts/restore.sh
@@ -1067,6 +1080,7 @@ echo "Restore process completed successfully"
 ### Step 6: Security Hardening
 
 #### 6.1 Security Script
+
 ```bash
 #!/bin/bash
 # scripts/security-hardening.sh
@@ -1138,6 +1152,7 @@ echo "Security hardening completed"
 ## Deployment Instructions
 
 ### Initial Setup
+
 ```bash
 # 1. Clone repository and set up environment
 git clone <repository-url>
@@ -1177,6 +1192,7 @@ curl -f https://pron-assist.yourdomain.com/health
 ```
 
 ### Maintenance Tasks
+
 ```bash
 # Update deployment
 docker-compose -f docker-compose.prod.yml pull

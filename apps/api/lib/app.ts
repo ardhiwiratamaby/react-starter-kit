@@ -52,8 +52,8 @@ app.get("/health", (c) => {
     services: {
       database: "connected", // Will check actual connection in Stage 2
       redis: "connected",
-      minio: "connected"
-    }
+      minio: "connected",
+    },
   });
 });
 

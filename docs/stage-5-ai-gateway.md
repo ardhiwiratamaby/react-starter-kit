@@ -17,11 +17,13 @@ This stage implements the AI Service Gateway that provides a unified interface f
 ## Technical Requirements
 
 ### AI Provider Support
+
 - **Text-to-Speech (TTS)**: OpenAI, Google Cloud TTS, Amazon Polly
 - **Speech-to-Text (STT)**: OpenAI Whisper, Google Cloud Speech, Deepgram
 - **Language Models (LLM)**: OpenAI GPT, Google Gemini, Anthropic Claude
 
 ### Gateway Features
+
 - Provider abstraction and routing
 - Automatic failover between providers
 - Cost optimization based on pricing models
@@ -30,6 +32,7 @@ This stage implements the AI Service Gateway that provides a unified interface f
 - Comprehensive logging and monitoring
 
 ### Performance Requirements
+
 - Sub-200ms response time for text operations
 - Sub-2s response time for audio operations
 - 99.9% availability target
@@ -40,6 +43,7 @@ This stage implements the AI Service Gateway that provides a unified interface f
 ### Step 1: FastAPI Gateway Structure
 
 #### 1.1 Main Application Setup
+
 ```python
 # apps/ai-gateway/main.py
 from fastapi import FastAPI, HTTPException, Request, Depends
@@ -141,6 +145,7 @@ if __name__ == "__main__":
 ```
 
 #### 1.2 Configuration Management
+
 ```python
 # apps/ai-gateway/services/config.py
 from pydantic import BaseSettings
@@ -265,6 +270,7 @@ class AIProviderConfig:
 ### Step 2: Provider Abstraction Layer
 
 #### 2.1 Base Provider Interface
+
 ```python
 # apps/ai-gateway/services/base_provider.py
 from abc import ABC, abstractmethod
@@ -327,6 +333,7 @@ class BaseProvider(ABC):
 ```
 
 #### 2.2 OpenAI Provider Implementation
+
 ```python
 # apps/ai-gateway/providers/openai_provider.py
 import openai
@@ -492,6 +499,7 @@ class OpenAIProvider(BaseProvider):
 ```
 
 #### 2.3 Provider Manager
+
 ```python
 # apps/ai-gateway/services/provider_manager.py
 from typing import List, Dict, Any, Optional
@@ -657,6 +665,7 @@ class ProviderManager:
 ### Step 3: API Routers
 
 #### 3.1 TTS Router
+
 ```python
 # apps/ai-gateway/routers/tts.py
 from fastapi import APIRouter, HTTPException, UploadFile, File
@@ -736,6 +745,7 @@ async def get_available_voices():
 ```
 
 #### 3.2 LLM Router
+
 ```python
 # apps/ai-gateway/routers/llm.py
 from fastapi import APIRouter, HTTPException
@@ -913,6 +923,7 @@ async def generate_conversation_script(request: ScriptGenerationRequest):
 ### Step 4: Monitoring and Health Checks
 
 #### 4.1 Health Check Router
+
 ```python
 # apps/ai-gateway/routers/health.py
 from fastapi import APIRouter, HTTPException
@@ -977,6 +988,7 @@ async def detailed_health_check():
 ## Docker Configuration
 
 #### 5.1 AI Gateway Dockerfile
+
 ```dockerfile
 # apps/ai-gateway/Dockerfile
 FROM python:3.11-slim
@@ -1010,6 +1022,7 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
 ```
 
 #### 5.2 Requirements File
+
 ```txt
 # apps/ai-gateway/requirements.txt
 fastapi==0.104.1
@@ -1034,6 +1047,7 @@ psutil==5.9.6
 ## Testing Strategy
 
 ### Unit Tests
+
 ```python
 # apps/ai-gateway/tests/test_provider_manager.py
 import pytest
@@ -1072,6 +1086,7 @@ async def test_health_check(provider_manager):
 ```
 
 ### Integration Tests
+
 ```bash
 # Test API endpoints
 curl -X POST http://localhost:8001/tts/speak \
@@ -1088,16 +1103,19 @@ curl -X GET http://localhost:8001/health/detailed
 ## Estimated Timeline: 1 Week
 
 ### Day 1-2: Provider Infrastructure
+
 - Create provider abstraction layer
 - Implement OpenAI provider
 - Set up provider manager with fallback
 
 ### Day 3-4: Additional Providers and API
+
 - Implement Google and AWS providers
 - Create API routers for TTS, STT, and LLM
 - Add rate limiting and monitoring
 
 ### Day 5: Testing and Optimization
+
 - Add comprehensive testing
 - Implement health checks
 - Optimize performance and error handling

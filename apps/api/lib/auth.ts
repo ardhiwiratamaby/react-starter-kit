@@ -83,8 +83,34 @@ export function createAuth(
     // Email and password authentication
     emailAndPassword: {
       enabled: true,
+      requireEmailVerification: false,
       sendResetPassword: async ({ user, url }) => {
         await sendPasswordReset(env, { user, url });
+      },
+    },
+
+    // Password hashing configuration
+    password: {
+      hash: async (password: string) => {
+        const { createHash } = await import("crypto");
+        const { createHmac } = await import("crypto");
+        const salt = createHash("sha256")
+          .update(Math.random().toString())
+          .digest("hex")
+          .slice(0, 32);
+        const hash = createHmac("sha256", salt).update(password).digest("hex");
+        return `${salt}:${hash}`;
+      },
+      verify: async (hash: string, password: string) => {
+        const { createHmac } = await import("crypto");
+        const [salt, key] = hash.split(":");
+        if (!salt || !key) {
+          throw new Error("Invalid password hash");
+        }
+        const verifyHash = createHmac("sha256", salt)
+          .update(password)
+          .digest("hex");
+        return key === verifyHash;
       },
     },
 
