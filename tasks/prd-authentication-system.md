@@ -2,13 +2,13 @@
 
 ## Introduction/Overview
 
-This PRD defines the requirements for implementing a comprehensive user authentication system for the Pronunciation Assistant application. The system will enable user account creation and personalized learning experiences through secure email/password authentication with email verification, supporting both individual learners and educational institution users.
+This PRD defines the requirements for implementing a comprehensive user authentication system for the Pronunciation Assistant application. The system will enable user account creation and personalized learning experiences through secure email/password authentication, supporting both individual learners and educational institution users.
 
 ## Goals
 
 1. Enable users to create accounts and access personalized pronunciation learning features
 2. Implement secure session management with persistent login states
-3. Provide email verification to ensure user account validity
+3. Provide secure password reset functionality
 4. Support role-based access control for future admin functionality
 5. Achieve high user registration and login completion rates (target: >85% completion)
 6. Integrate seamlessly with existing Docker-based infrastructure
