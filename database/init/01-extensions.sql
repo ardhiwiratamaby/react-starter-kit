@@ -1,0 +1,16 @@
+-- Enable required PostgreSQL extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+CREATE EXTENSION IF NOT EXISTS "btree_gin";
+CREATE EXTENSION IF NOT EXISTS "btree_gist";
+
+-- Create custom types
+CREATE TYPE user_role AS ENUM ('USER', 'ADMIN');
+CREATE TYPE document_status AS ENUM ('UPLOADING', 'PROCESSING', 'READY', 'ERROR');
+CREATE TYPE conversation_status AS ENUM ('ACTIVE', 'COMPLETED', 'PAUSED');
+CREATE TYPE audio_format AS ENUM ('WEBM', 'MP3', 'WAV', 'OGG');
+CREATE TYPE feedback_type AS ENUM ('PRONUNCIATION', 'FLUENCY', 'RHYTHM', 'INTONATION');
+CREATE TYPE ai_provider AS ENUM ('OPENAI', 'GOOGLE', 'AWS', 'AZURE', 'LOCAL');
+CREATE TYPE script_generation_mode AS ENUM ('DOCUMENT_BASED', 'TOPIC_BASED', 'TEMPLATE_BASED');
+
+COMMIT;
